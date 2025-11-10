@@ -260,9 +260,9 @@
         
         // Difficulty Configurations 
         const difficultyConfig = {
-            easy: { S1: 3, S2: 5, S3: 3, S4: 1, S5: 7, label: "ง่าย (Easy)" }, // S5: 7 steps
-            hard: { S1: 5, S2: 8, S3: 5, S4: 1, S5: 7, label: "ยาก (Hard)" }, // S5: 7 steps
-            harder: { S1: 5, S2: 10, S3: 5, S4: 1, S5: 7, label: "ยากขึ้น (Harder)" } // S5: 7 steps
+            easy: { S1: 3, S2: 5, S3: 3, S4: 1, S5: 7, label: "ง่าย (Easy)" }, 
+            hard: { S1: 5, S2: 8, S3: 5, S4: 1, S5: 7, label: "ยาก (Hard)" }, 
+            harder: { S1: 5, S2: 10, S3: 5, S4: 1, S5: 7, label: "ยากขึ้น (Harder)" } 
         };
 
         // --- 2. Audio Files URL ---
@@ -792,6 +792,11 @@
             window.answerHBtn.textContent = '🎙️ 1. บันทึกคำถามสุขภาพหลัก';
             window.hStatusElement.textContent = `✅ ช่วงที่ 3 เสร็จสิ้น! กรุณาบันทึกคำถามสุขภาพหลัก`;
             alert("จบบทที่ 3 แล้ว! เริ่มช่วงที่ 4: คำถามสุขภาพ (1 คำถามหลัก และ 5 ซักประวัติ)");
+
+            // FIX 1: Set static question text when starting S4
+            document.getElementById('healthQuestionDisplay').innerHTML = `
+                <p>คำถามหลัก: ใน 5 ปีที่ผ่านมา ท่านเคยได้รับการบาดเจ็บ เจ็บป่วย หรือเข้ารับการรักษาตัวในโรงพยาบาลหรือไม่?</p>
+            `;
         }
         
         window.playDynamicHealthQuestion = function() {
@@ -815,6 +820,11 @@
                 window.followUpQBtn.textContent = '🎙️ บันทึกคำถามซักประวัติ Q1';
                 window.followUpQBtn.disabled = false; 
                 followUpStep = 0; 
+                
+                // FIX 2: Show the first follow-up question text
+                document.getElementById('healthQuestionDisplay').innerHTML = `
+                    <p><strong>คำถามซักประวัติที่ต้องถาม:</strong> ${H_FOLLOW_UP_NAMES[0]}</p>
+                `;
             };
         }
         
@@ -826,6 +836,11 @@
                 window.hStatusElement.textContent = `🎉 เสร็จสิ้นการซักประวัติ ${selectedDisease.name} ครบ 5 ข้อแล้ว! กรุณากด 'จบบทที่ 4'`;
                 window.followUpQBtn.style.display = 'none';
                 window.nextSection5Btn.disabled = false;
+                
+                // FIX 4: Clear/Finalize the display
+                document.getElementById('healthQuestionDisplay').innerHTML = `
+                    <p>✅ เสร็จสิ้นการซักประวัติแล้ว</p>
+                `;
                 return;
             }
             
@@ -840,6 +855,11 @@
             
             window.healthAudio.onended = () => {
                 if (followUpStep < maxFollowUp) {
+                    // FIX 3: Show the next follow-up question text
+                    document.getElementById('healthQuestionDisplay').innerHTML = `
+                        <p><strong>คำถามซักประวัติที่ต้องถาม:</strong> ${H_FOLLOW_UP_NAMES[followUpStep]}</p>
+                    `;
+
                     window.hStatusElement.textContent = `🎤 พร้อมบันทึกคำถามซักประวัติ Q${followUpStep + 1} (${H_FOLLOW_UP_NAMES[followUpStep]})`;
                     window.followUpQBtn.textContent = `🎙️ บันทึกคำถามซักประวัติ Q${followUpStep + 1}`;
                     window.followUpQBtn.disabled = false;
@@ -847,6 +867,11 @@
                     window.hStatusElement.textContent = `🎉 เสร็จสิ้นการซักประวัติ ${selectedDisease.name} ครบ 5 ข้อแล้ว! กรุณากด 'จบบทที่ 4'`;
                     window.followUpQBtn.style.display = 'none';
                     window.nextSection5Btn.disabled = false;
+                    
+                    // FIX 4: Clear/Finalize the display
+                    document.getElementById('healthQuestionDisplay').innerHTML = `
+                        <p>✅ เสร็จสิ้นการซักประวัติแล้ว</p>
+                    `;
                 }
             };
         }
