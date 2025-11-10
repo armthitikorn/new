@@ -240,8 +240,9 @@
         let currentUserId = null; 
         const USER_ID_KEY = 'roleplay_user_id';
         
-        // --- NEW: Global Storage for Single Final Upload ---
-        let allRecordedBlobs = []; // Stores individual audio blobs (employee voice)
+        // --- Global Storage for Single Final Upload ---
+        let allRecordedBlobs = []; 
+        let finalRecordingMetadata = []; 
         // ---------------------------------------------------
 
         // Round Counters 
@@ -260,7 +261,7 @@
         let maxC;
         let maxH = 1; 
         let maxFollowUp = 5; 
-        let maxA; // จะถูกตั้งค่าเป็น REGISTRATION_STEPS (7)
+        let maxA; 
         
         // Difficulty Configurations 
         const difficultyConfig = {
@@ -369,7 +370,6 @@
         const finalObjection = allCustomerReplies[8];
         let shuffledQuestionPool = []; 
         
-        // --- NEW: Global Metadata Storage ---
         let finalRecordingMetadata = []; 
         
         function shuffle(array) {
@@ -393,33 +393,30 @@
                 }
             });
         }
+
+        // --- IMPORTANT: Removed 2.0x Speed setting ---
         function getCachedAudioElement(url, fallbackToNew = true) {
             if (audioCache[url]) {
                 const cachedAudio = audioCache[url].cloneNode(true);
                 cachedAudio.currentTime = 0;
-                // --- FIX: SET PLAYBACK RATE ---
-                cachedAudio.playbackRate = 1.5; // 1.5x Speed
-                // -----------------------------
+                cachedAudio.playbackRate = 1.0; // Normal Speed
                 return cachedAudio;
             }
             if (fallbackToNew) {
                 const newAudio = new Audio(url);
-                // --- FIX: SET PLAYBACK RATE ---
-                newAudio.playbackRate = 1.5; // 1.5x Speed
-                // -----------------------------
+                newAudio.playbackRate = 1.0; // Normal Speed
                 return newAudio;
             }
             return null;
         }
+        // --- END: Speed Fix ---
+
         function prepareQuestionPool() {
             shuffledQuestionPool = [...questionFiles];
             shuffle(shuffledQuestionPool); 
         }
 
-        // --- REMOVED: window.uploadSingleRecording ---
-        // Logic moved to saveAllRecordings
-        
-        // --- Main Recording Logic (Modified to store chunks locally) ---
+        // --- Main Recording Logic (Stores chunks locally) ---
         window.toggleRecording = async function(type) {
             let statusElement, buttonElement, nextAutoAction, originalButtonText;
             let part, qNum, qText, chunks = [];
@@ -506,11 +503,9 @@
                         const audioBlob = new Blob(chunks, { type: 'audio/webm' });
                         
                         if (audioBlob.size > 0) {
-                            // --- NEW: Store Blob and Metadata locally ---
                             allRecordedBlobs.push(audioBlob); 
                             finalRecordingMetadata.push({ part, qNum, qText, timestamp: new Date().toISOString() });
                             console.log(`Saved Chunk: P${part}-Q${qNum}. Total Chunks: ${allRecordedBlobs.length}`);
-                            // ------------------------------------------
                         } else {
                             console.warn("Recording stopped with 0 size data. Not storing.");
                         }
@@ -519,7 +514,11 @@
                         buttonElement.textContent = originalButtonText; 
                         stream.getTracks().forEach(track => track.stop());
                         buttonElement.disabled = true; 
-                        nextAutoAction(); 
+                        
+                        // *** CRITICAL FIX: Ensure next action runs immediately (or after a very short fixed delay) ***
+                        setTimeout(nextAutoAction, 50); // Small fixed delay for safety/UI update
+                        // ******************************************************************************************
+
                         mediaRecorder = null; 
                     };
                     
@@ -556,7 +555,7 @@
             }
         }
         
-        // --- Section 1 Functions (Unchanged, speedup handled by getCachedAudioElement) ---
+        // --- Section 1 Functions ---
         
         function prepareTurnFiles() {
             selectedRandomFiles = [fixedFirstObjection];
@@ -576,7 +575,7 @@
                 window.s1StatusElement.textContent = `⏳ กำลังโหลดเสียงลูกค้า...`;
                 window.customerAudio = getCachedAudioElement(fileToPlay, true);
                 window.customerAudio.onloadeddata = () => {
-                    window.s1StatusElement.textContent = `🔊 กำลังเล่นเสียงลูกค้า (${turn}/${maxTurns}) (1.5x speed)...`;
+                    window.s1StatusElement.textContent = `🔊 กำลังเล่นเสียงลูกค้า (${turn}/${maxTurns})...`;
                     window.customerAudio.play().catch(error => {
                             window.s1StatusElement.textContent = `❌ เล่นอัตโนมัติถูกบล็อก: ${error.message}. กรุณากดเริ่มบันทึกเสียงพนักงานอีกครั้ง`; 
                             window.recordBtn.disabled = false;
@@ -600,7 +599,7 @@
             }
         }
 
-        // --- Other Section Initialization & Playback Functions (Unchanged except speed) ---
+        // --- Other Section Initialization & Playback Functions ---
         
         window.initSection1_5 = function() {
             window.nextRoundBtn.disabled = true; 
@@ -653,7 +652,7 @@
             window.answerBtn.disabled = true;
             window.questionAudio.onloadeddata = () => {
                 window.questionAudio.play();
-                window.s2StatusElement.textContent = `🔊 กำลังเล่นคำถามที่ ${qRound}/${maxQ} (1.5x speed)...`; 
+                window.s2StatusElement.textContent = `🔊 กำลังเล่นคำถามที่ ${qRound}/${maxQ}...`; 
             };
             
             window.questionAudio.onended = () => {
@@ -697,7 +696,7 @@
             window.objectionAudio = getCachedAudioElement(selectedFile, true);
             window.objectionAudio.onloadeddata = () => {
                 window.objectionAudio.play();
-                window.s3StatusElement.textContent = `🔊 กำลังเล่นข้อโต้แย้งลูกค้า (รอบที่ ${cRound}/${maxC}) (1.5x speed)...`; 
+                window.s3StatusElement.textContent = `🔊 กำลังเล่นข้อโต้แย้งลูกค้า (รอบที่ ${cRound}/${maxC})...`; 
             };
 
             window.objectionAudio.onended = () => {
@@ -710,7 +709,9 @@
         window.startNextCloseRoundAuto = function() {
             if (cRound < maxC) {
                 window.s3StatusElement.textContent = "✅ บันทึกเสร็จสิ้น! ข้อโต้แย้งลูกค้าถัดไปกำลังจะเริ่ม...";
-                setTimeout(window.playRandomObjectionAuto, 500); 
+                // *** CRITICAL FIX: Removed setTimeout ***
+                window.playRandomObjectionAuto(); 
+                // ***************************************
             } else {
                 window.s3StatusElement.textContent = "🎉 เสร็จสิ้นช่วงที่ 3! กรุณากด 'จบบทที่ 3' เพื่อไปช่วงที่ 4";
                 window.replyBtn.disabled = true;
@@ -719,6 +720,14 @@
             }
         }
         
+        function updateHealthQuestionUI() {
+            if (isFollowUpMode) {
+                window.hQName.textContent = `ซักประวัติ Q${followUpStep}/${maxFollowUp}: ${H_FOLLOW_UP_NAMES[followUpStep - 1]}`;
+            } else {
+                window.hQName.textContent = `คำถามหลัก Q${currentHIndex + 1}/${maxH}: ${H_QUESTION_NAMES[0]}`;
+            }
+        }
+
         window.initSection4 = function() {
             window.nextSection4Btn.disabled = true;
             window.nextSection5Btn.disabled = true;
@@ -750,7 +759,7 @@
             window.healthAudio = getCachedAudioElement(customerReplyUrl, true);
             window.healthAudio.onloadeddata = () => {
                 window.healthAudio.play();
-                window.hStatusElement.textContent = `🔊 กำลังเล่นคำตอบลูกค้า: ใช่ค่ะ/ครับ เคยเป็น${selectedDisease.name}... (1.5x speed)`;
+                window.hStatusElement.textContent = `🔊 กำลังเล่นคำตอบลูกค้า: ใช่ค่ะ/ครับ เคยเป็น${selectedDisease.name}...`;
             };
             
             window.healthAudio.onended = () => {
@@ -787,7 +796,7 @@
             window.healthAudio = getCachedAudioElement(customerReplyUrl, true);
             window.healthAudio.onloadeddata = () => {
                 window.healthAudio.play();
-                window.hStatusElement.textContent = `🔊 กำลังเล่นคำตอบลูกค้าสำหรับ Q${followUpStep}... (1.5x speed)`;
+                window.hStatusElement.textContent = `🔊 กำลังเล่นคำตอบลูกค้าสำหรับ Q${followUpStep}...`;
             };
             
             window.healthAudio.onended = () => {
@@ -818,7 +827,7 @@
             window.answerABtn.disabled = true;
             window.finalSaveBtn.disabled = true;
             
-            maxA = REGISTRATION_STEPS; // Now 7
+            maxA = REGISTRATION_STEPS; 
             window.maxASpan.textContent = maxA;
             aRound = 0; 
             
@@ -856,7 +865,7 @@
 
             window.agreementAudio.onloadeddata = () => {
                 window.agreementAudio.play();
-                window.aStatusElement.textContent = `🔊 กำลังเล่นขั้นตอนที่ ${aRound}/${maxA} (${currentStepName}) (1.5x speed)...`; 
+                window.aStatusElement.textContent = `🔊 กำลังเล่นขั้นตอนที่ ${aRound}/${maxA} (${currentStepName})...`; 
             };
             
             window.agreementAudio.onended = () => {
@@ -870,7 +879,7 @@
             }; 
         }
 
-        // --- Final Save Function (Modified for Single Final Upload) ---
+        // --- Final Save Function (Single Final Upload) ---
         window.saveAllRecordings = async function() {
             
             if (!window.inputUserName.value.trim()) { 
@@ -888,8 +897,6 @@
             window.loadingOverlay.style.display = "flex";
             window.loadingText.textContent = `1/3: กำลังรวมไฟล์เสียง ${allRecordedBlobs.length} ส่วน...`;
             
-            // 1. Merge all Blobs into a single final Blob
-            // (Assumes all chunks are 'audio/webm', which is true for MediaRecorder default)
             const finalBlob = new Blob(allRecordedBlobs, { type: 'audio/webm' });
             
             const userName = window.inputUserName.value.trim();
@@ -920,12 +927,11 @@
                             user_id: currentUserId,
                             name: userName, 
                             email: `anon_${currentUserId}@roleplay.com`, 
-                            part_number: 99, // MARKER for Dashboard: Final Full Session
-                            question_number: 1, // Represents the full session
+                            part_number: 99, // MARKER: Final Full Session
+                            question_number: 1, 
                             question_text: `Full Session (FINAL): ${allRecordedBlobs.length} parts recorded (Difficulty: ${difficulty})`, 
                             audio_url: publicUrl,
                             duration_seconds: finalBlob.size > 0 ? (finalBlob.size / 100000) : 0,
-                            // Optional: Store the metadata array for detailed review
                             raw_metadata: finalRecordingMetadata 
                         }
                     ]);
@@ -995,7 +1001,6 @@
             }
             currentUserId = userId;
             
-            // 2. DOM Element Assignments (All other DOM assignments remain here)
             window.registrationSection = document.getElementById("registrationSection");
             window.testSection = document.getElementById("testSection");
             window.startTestBtn = document.getElementById("startTestBtn");
@@ -1050,7 +1055,6 @@
             window.agreementAudio = document.getElementById("agreementAudio");
             window.stepList = document.getElementById("stepList"); 
 
-            // 3. Bind Event Listeners
             window.startTestBtn.addEventListener('click', startTest); 
             window.recordBtn.addEventListener('click', () => window.toggleRecording(1));
             window.nextRoundBtn.addEventListener('click', window.initSection1_5); 
