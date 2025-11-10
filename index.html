@@ -376,7 +376,7 @@
         }
         function preloadCriticalAudio() {
             const s1Urls = allCustomerReplies.slice(0, 5);
-            const s2Urls = questionFiles.slice(0, 10); // Preload all 10 for better S2 performance
+            const s2Urls = questionFiles.slice(0, 10); 
             const criticalUrls = [...s1Urls, ...s2Urls];
             criticalUrls.forEach(url => {
                 if (!audioCache[url]) {
@@ -411,12 +411,21 @@
             window.loadingText.textContent = `กำลังอัปโหลดไฟล์ P${partNumber}-Q${questionNumber}...`;
             window.uploadProgressBar.style.width = `20%`;
             
-            const partStr = `S${partNumber}`;
+            // --- CRITICAL CHANGE: Handle Special Part Numbers for File Naming (Fix S1.5/15) ---
+            let partStr;
+            if (partNumber === 15) {
+                 partStr = 'S1_5'; // Use S1_5 for storage folder name
+            } else if (partNumber === 99) {
+                 partStr = 'FINAL';
+            } else {
+                 partStr = `S${partNumber}`;
+            }
+
             const qStr = (partNumber === 1 && questionNumber === maxTurns) ? 'FINALE' : `Q${questionNumber}`;
             const fileName = `${currentUserId}/${partStr}/${qStr}_${uuidv4()}.webm`;
             
             try {
-                // 1. Upload to Supabase Storage (Simulated progress)
+                // 1. Upload to Supabase Storage 
                 const { error: uploadError } = await window.supabase.storage
                     .from('responses') 
                     .upload(fileName, audioBlob, { upsert: false });
@@ -436,7 +445,7 @@
                             user_id: currentUserId,
                             name: userName, 
                             email: `anon_${currentUserId}@roleplay.com`, 
-                            part_number: partNumber,
+                            part_number: partNumber, // Should now be an Integer (1, 15, 2, 3, 4, 5)
                             question_number: questionNumber,
                             question_text: questionText + ` (Diff: ${difficulty})`, 
                             audio_url: publicUrl,
@@ -450,7 +459,7 @@
                 return true;
             } catch (err) {
                 console.error('❌ Upload Failed:', err);
-                alert(`เกิดข้อผิดพลาดในการอัปโหลด P${partNumber}-Q${questionNumber}: ${err.message}.`);
+                alert(`เกิดข้อผิดพลาดในการอัปโหลด P${partNumber}-Q${questionNumber}: ${err.message}. โปรดตรวจสอบ RLS!`);
                 return false;
             } finally {
                 setTimeout(() => { window.loadingOverlay.style.display = "none"; }, 500);
@@ -470,9 +479,9 @@
                 nextAutoAction = window.endTurn; 
                 originalButtonText = '🎙️ เริ่มบันทึกเสียง (พนักงาน)';
             } 
-            // NEW SECTION 1.5
+            // NEW SECTION 1.5 (FIXED: part changed from 1.5 to 15)
             else if (type === 8) { 
-                part = 1.5; qNum = 1; qText = 'S1.5: นำเสนอผลิตภัณฑ์ (Product Pitch)';
+                part = 15; qNum = 1; qText = 'S1.5: นำเสนอผลิตภัณฑ์ (Product Pitch)'; 
                 statusElement = window.pitchStatusElement;
                 buttonElement = window.pitchRecordBtn; 
                 nextAutoAction = window.endPitchRecording; 
@@ -568,12 +577,12 @@
                     else if (type === 5) buttonElement.textContent = "⏹️ หยุดบันทึกคำถามหลัก"; 
                     else if (type === 7) buttonElement.textContent = "⏹️ หยุดบันทึกคำถามซักประวัติ"; 
                     else if (type === 6) buttonElement.textContent = "⏹️ หยุดบันทึกการตอบกลับ";
-                    else if (type === 8) buttonElement.textContent = "⏹️ หยุดบันทึกเสียงนำเสนอ"; // S1.5
+                    else if (type === 8) buttonElement.textContent = "⏹️ หยุดบันทึกเสียงนำเสนอ"; 
                     else buttonElement.textContent = "⏹️ หยุดบันทึก";
                     
                     // Disable section end buttons while recording
                     if (type === 1) window.nextRoundBtn.disabled = true;
-                    if (type === 8) window.nextSection2Btn.disabled = true; // S1.5
+                    if (type === 8) window.nextSection2Btn.disabled = true; 
                     if (type === 2) window.nextSection3Btn.disabled = true;
                     if (type === 5 || type === 7) window.nextSection5Btn.disabled = true;
                     if (type === 6) window.finalSaveBtn.disabled = true;
