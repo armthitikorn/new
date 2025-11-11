@@ -281,7 +281,8 @@
         };
 
         // --- 2. Audio Files URL (จาก simulet.html) ---
-        let audioCache = {};
+        // ** FIX: DECLARE audioCache ONLY ONCE **
+        const audioCache = {};
 
         // S1: เปิดตัว/โต้ตอบต้นสาย (9 files: Index 0 to 8. Q9 is Index 8)
         const allCustomerReplies = [
@@ -377,7 +378,6 @@
         ];
 
         // --- Utility Functions ---
-        let audioCache = {};
         let selectedRandomFiles = []; 
 
 
