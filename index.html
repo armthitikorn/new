@@ -271,15 +271,16 @@
         // --- 2. Audio Files URL (UNCHANGED) ---
         let audioCache = {};
         const allCustomerReplies = [
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s1_1.m4a", // Index 0
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s1_2.m4a", // Index 1
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s1_3.m4a", // Index 2
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s1_4.m4a", // Index 3
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s1_5.m4a", // Index 4
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s1_9.m4a", // Index 5 *** THE FIXED FINALE FILE ***
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s1_7.m4a", // Index 6
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s1_8.m4a", // Index 7
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s1_6.m4a"  // Index 8
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s1_1.m4a", 
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s1_2.m4a", 
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s1_3.m4a", 
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s1_4.m4a", 
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s1_5.m4a", 
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s1_6.m4a", // *** THE FIXED FINALE FILE ***
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s1_7.m4a", 
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s1_8.m4a", 
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s1_9.m4a"
+              
         ];
         const questionFiles = [
             "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s2_1.m4a", 
@@ -309,13 +310,13 @@
         // --- SECTION 5: Registration Steps (7 Steps) (UNCHANGED) ---
         const REGISTRATION_STEPS = 7; 
         const registrationScriptFiles = [
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s4_1.m4a", // Customer reply for Step 1
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s5_Birthday.m4a", // Customer reply for Step 2
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s4_2.m4a", // Customer reply for Step 3
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s4_3.m4a", // Customer reply for Step 4
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s4_4.m4a", // Customer reply for Step 5
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s4_5.m4a", // Customer reply for Step 6
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s4_6.m4a" // Customer reply for Step 7
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s4_1.m4a", 
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s5_Birthday.m4a", 
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s4_2.m4a", 
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s4_3.m4a", 
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s4_4.m4a", 
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s4_5.m4a", 
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s4_6.m4a" 
         ];
         const registrationStepNames = [
             "1. ขอสะกดชื่อ-นามสกุล", 
@@ -368,30 +369,35 @@
         let shuffledObjectionPool = []; 
         
         
+        // ** MODIFIED: preloadCriticalAudio to preload ALL customer audio files for all 5 sections **
         window.preloadCriticalAudio = function() {
-            const s1Urls = allCustomerReplies.slice(0, 7); // Preload more S1 files
-            const s2Urls = questionFiles.slice(0, 10); 
-            const criticalUrls = [...s1Urls, ...s2Urls];
-            criticalUrls.forEach(url => {
+            const s1Urls = allCustomerReplies; // All S1 replies
+            const s2Urls = questionFiles; // All S2 replies
+            const s3Urls = objectionFiles; // All S3 replies
+            
+            // S4: Fixed disease 'ความดันสูง' (Index 0) และคำถามซักประวัติทั้งหมด
+            const s4Urls = [
+                H_DISEASE_DATA[0].yesTriggerUrl, 
+                ...H_DISEASE_DATA[0].followUpReplies
+            ];
+            
+            const s5Urls = registrationScriptFiles; // All S5 replies
+
+            const allUrls = [...s1Urls, ...s2Urls, ...s3Urls, ...s4Urls, ...s5Urls];
+            
+            console.log(`Preloading ${allUrls.length} customer audio files for all sections...`);
+
+            allUrls.forEach(url => {
                 if (!audioCache[url]) {
                     const audio = new Audio(url);
-                    audio.load();
+                    audio.load(); 
                     audioCache[url] = audio;
                 }
             });
+            
+            console.log("Preloading started. The test can proceed without network delays for customer audio.");
         }
-        window.getCachedAudioElement = function(url, fallbackToNew = true) {
-            if (audioCache[url]) {
-                const cachedAudio = audioCache[url].cloneNode(true);
-                cachedAudio.currentTime = 0;
-                return cachedAudio;
-            }
-            if (fallbackToNew) {
-                return new Audio(url);
-            }
-            return null;
-        }
-        
+
         // ** MODIFIED: prepareTurnFiles for FIXED FINALE S1-6 **
         window.prepareTurnFiles = function() {
             // maxTurns คือจำนวนโต้ตอบทั้งหมด (รวมเทิร์นสุดท้าย)
@@ -399,7 +405,6 @@
             const finaleFile = allCustomerReplies[5]; 
             
             // ใช้ไฟล์เสียงตามลำดับ 1, 2, 3... ไปจนถึงก่อนถึงเทิร์นสุดท้าย
-            // index 0 คือไฟล์ 1, index maxTurns - 2 คือไฟล์ก่อนสุดท้าย
             const sequentialFiles = allCustomerReplies.slice(0, maxTurns - 1);
             
             // กำหนดให้ไฟล์เสียงที่ใช้คือ ลำดับ + ไฟล์สุดท้ายที่ต้องการ (ไฟล์ 6)
@@ -411,7 +416,18 @@
             }
             
             console.log(`S1 Turn Files (${maxTurns} turns):`, selectedRandomFiles);
-            // Example: maxTurns = 3 -> selectedRandomFiles = [s1_1.m4a, s1_2.m4a, s1_6.m4a] (Index 0, 1, 5)
+        }
+        
+        window.getCachedAudioElement = function(url, fallbackToNew = true) {
+            if (audioCache[url]) {
+                const cachedAudio = audioCache[url].cloneNode(true);
+                cachedAudio.currentTime = 0;
+                return cachedAudio;
+            }
+            if (fallbackToNew) {
+                return new Audio(url);
+            }
+            return null;
         }
         
         window.prepareQuestionPool = function() {
@@ -1170,8 +1186,9 @@
             window.registrationSection.style.display = 'none';
             window.testSection.style.display = 'block';
 
-            window.preloadCriticalAudio();
-            window.prepareTurnFiles(); // *** IMPORTANT: Call the modified preparation function ***
+            // ** CRITICAL FOR PERFORMANCE: Preload ALL files now **
+            window.preloadCriticalAudio(); 
+            window.prepareTurnFiles(); 
             window.recordBtn.disabled = false;
             window.s1StatusElement.textContent = `🎤 พร้อมบันทึกบทพูดเปิดตัว (เทิร์นที่ 1/${maxTurns})`;
         }
