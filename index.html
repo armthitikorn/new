@@ -276,10 +276,10 @@
             "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s1_3.m4a", 
             "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s1_4.m4a", 
             "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s1_5.m4a",
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s1_6.m4a",// *** THE FIXED FINALE FILE ***
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s1_6.m4a",
             "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s1_7.m4a", 
             "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s1_8.m4a", 
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s1_9.m4a" 
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s1_9.m4a"// *** THE FIXED FINALE FILE *** 
               
         ];
         const questionFiles = [
@@ -398,16 +398,16 @@
             console.log("Preloading started. The test can proceed without network delays for customer audio.");
         }
 
-        // ** MODIFIED: prepareTurnFiles for FIXED FINALE S1-6 **
+        // ** MODIFIED: prepareTurnFiles for FIXED FINALE S1-9 **
         window.prepareTurnFiles = function() {
             // maxTurns คือจำนวนโต้ตอบทั้งหมด (รวมเทิร์นสุดท้าย)
-            // ไฟล์เสียงที่ 6 คือ index 5
+            // ไฟล์เสียงที่ 9 คือ index 5
             const finaleFile = allCustomerReplies[5]; 
             
             // ใช้ไฟล์เสียงตามลำดับ 1, 2, 3... ไปจนถึงก่อนถึงเทิร์นสุดท้าย
             const sequentialFiles = allCustomerReplies.slice(0, maxTurns - 1);
             
-            // กำหนดให้ไฟล์เสียงที่ใช้คือ ลำดับ + ไฟล์สุดท้ายที่ต้องการ (ไฟล์ 6)
+            // กำหนดให้ไฟล์เสียงที่ใช้คือ ลำดับ + ไฟล์สุดท้ายที่ต้องการ (ไฟล์ 9)
             selectedRandomFiles = sequentialFiles.slice(0, maxTurns - 1);
             
             // หาก maxTurns > 0 ให้เพิ่มไฟล์สุดท้ายที่กำหนดลงไป
