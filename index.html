@@ -293,7 +293,7 @@
             "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s1_6.m4a", // Index 5
             "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s1_7.m4a", // Index 6
             "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s1_8.m4a", // Index 7
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s1_9.m4a" // Index 8 (Q9)
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s1_9.m4a" // Index 8 (Q9) <-- S1 FINAL FILE
         ];
         // S2: ตอบคำถามลูกค้า (10 files)
         const questionFiles = [
@@ -319,7 +319,7 @@
             "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s3_7.m4a", // Index 6
             "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s3_8.m4a", // Index 7
             "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s3_9.m4a", // Index 8
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s3_10.m4a" // Index 9 (Q10)
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s3_10.m4a" // Index 9 (Q10) <-- S3 FINAL FILE
         ];
         
         // --- SECTION 5: Registration Steps (จาก simulet.html) ---
@@ -344,7 +344,6 @@
         ];
 
         // --- Section 4 Dynamic Health Check Data (จาก simulet.html) ---
-        // NOTE: simulet.html uses a simpler single-question logic but with fixed follow-up.
         const H_QUESTION_NAMES = ["คำถามสุขภาพหลัก (Yes/No)"]; 
         const H_FOLLOW_UP_NAMES = [
             "1. เป็นมานานเท่าไหร่", "2. ลักษณะอาการเป็นอย่างไร",
@@ -378,6 +377,7 @@
         ];
 
         // --- Utility Functions ---
+        let audioCache = {};
         let selectedRandomFiles = []; 
 
 
@@ -488,7 +488,7 @@
         }
 
 
-        // --- BATCH UPLOAD Logic ---
+        // --- BATCH UPLOAD Logic (FIXED FOR FLOAT/INTEGER) ---
         window.storeRecording = function(audioBlob, part, qNum, qText) {
             allRecordings.push({ audioBlob, part, qNum, qText });
             console.log(`✅ Recording saved locally: P${part}-Q${qNum}. Total recordings: ${allRecordings.length}`);
@@ -533,10 +533,20 @@
                     partStr = `S${part}`;
                 }
 
-                // FIX for QNum: Ensure float QNums are handled for file naming
-                const qNumFixed = String(qNum).replace('.', ''); 
+                // --- FIX FOR 400 ERROR (P4-Q1.X FLOAT INSERTION) ---
+                let question_number_to_insert = Math.floor(qNum); // Default for non-float parts (1, 2, 3, 5)
+
+                if (part === 4 && qNum > 1) {
+                    // Convert P4 follow-up floats (1.1, 1.2, etc.) to integers (11, 12, etc.) for DB safety
+                    question_number_to_insert = Math.round(qNum * 10);
+                }
+                // --- END FIX ---
+
+
+                // Ensure file name also uses the fixed integer representation for P4 follow-ups for clarity
+                const qNumFile = (part === 4 && qNum > 1) ? question_number_to_insert : String(qNum).replace('.', '');
                 
-                const qStr = (part === 1 && qNum === maxTurns) ? 'FINALE' : `Q${qNumFixed}`;
+                const qStr = (part === 1 && qNum === maxTurns) ? 'FINALE' : `Q${qNumFile}`;
                 const fileName = `${currentUserId}/${partStr}/${qStr}_${uuidv4()}.webm`; 
 
                 try {
@@ -556,8 +566,8 @@
                                 name: userName, 
                                 email: `anon_${currentUserId}@roleplay.com`, 
                                 part_number: part, 
-                                // FIX: Ensure qNum is saved as a number/integer for DB
-                                question_number: (part === 4 && qNum > 1) ? qNum : Math.floor(qNum), 
+                                // Use the safe integer value
+                                question_number: question_number_to_insert, 
                                 question_text: qText + ` (Diff: ${difficulty})`, 
                                 audio_url: publicUrl,
                                 duration_seconds: audioBlob.size > 0 ? (audioBlob.size / 100000) : 0 
@@ -773,6 +783,10 @@
             // Sequential Display Logic
             document.getElementById('section1Div').style.display = 'none';
             document.getElementById('section1_5Div').style.display = 'block';
+            document.getElementById('section2Div').style.display = 'none';
+            document.getElementById('section3Div').style.display = 'none';
+            document.getElementById('section4Div').style.display = 'none';
+            document.getElementById('section5Div').style.display = 'none';
 
             window.nextRoundBtn.disabled = true; 
             window.recordBtn.disabled = true; 
@@ -793,8 +807,12 @@
 
         window.initSection2 = function() {
             // Sequential Display Logic
+            document.getElementById('section1Div').style.display = 'none';
             document.getElementById('section1_5Div').style.display = 'none';
             document.getElementById('section2Div').style.display = 'block';
+            document.getElementById('section3Div').style.display = 'none';
+            document.getElementById('section4Div').style.display = 'none';
+            document.getElementById('section5Div').style.display = 'none';
 
             window.nextSection2Btn.disabled = true; 
             window.pitchRecordBtn.disabled = true; 
@@ -847,8 +865,12 @@
 
         window.initSection3 = function() {
             // Sequential Display Logic
+            document.getElementById('section1Div').style.display = 'none';
+            document.getElementById('section1_5Div').style.display = 'none';
             document.getElementById('section2Div').style.display = 'none';
             document.getElementById('section3Div').style.display = 'block';
+            document.getElementById('section4Div').style.display = 'none';
+            document.getElementById('section5Div').style.display = 'none';
 
             window.nextSection3Btn.disabled = true;
             window.startQBtn.disabled = true;
@@ -928,8 +950,12 @@
         // S4: Init Section 4
         window.initSection4 = function() {
             // Sequential Display Logic
+            document.getElementById('section1Div').style.display = 'none';
+            document.getElementById('section1_5Div').style.display = 'none';
+            document.getElementById('section2Div').style.display = 'none';
             document.getElementById('section3Div').style.display = 'none';
             document.getElementById('section4Div').style.display = 'block';
+            document.getElementById('section5Div').style.display = 'none';
 
             window.nextSection4Btn.disabled = true;
             window.nextSection5Btn.disabled = true;
@@ -1028,6 +1054,10 @@
         
         window.initSection5 = function() {
             // Sequential Display Logic
+            document.getElementById('section1Div').style.display = 'none';
+            document.getElementById('section1_5Div').style.display = 'none';
+            document.getElementById('section2Div').style.display = 'none';
+            document.getElementById('section3Div').style.display = 'none';
             document.getElementById('section4Div').style.display = 'none';
             document.getElementById('section5Div').style.display = 'block';
 
