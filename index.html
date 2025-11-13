@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
-    <title>E-Simulator Roleplay (ประกันชีวิต - FIXED S1-Q9 & S3-Q10 FINALE & SEQUENTIAL DISPLAY)</title>
+    <title>E-Simulator Roleplay (ประกันสุขภาพ - FIXED S1-Q9 & S3-Q10 FINALE & BATCH UPLOAD)</title>
     
     <style>
         /* 1. สไตล์ที่ถูกปรับขนาด (NEW) */
@@ -125,7 +125,7 @@
     </div>
 
     <div class="container-box">
-        <h1>E-Simulator Roleplay (ประกันชีวิต)</h1>
+        <h1>E-Simulator Roleplay (ประกันสุขภาพ)</h1>
         
         <div id="registrationSection">
             <h2 style="color: #333;">📝 หน้าลงทะเบียนและตั้งค่าแบบทดสอบ</h2>
@@ -135,7 +135,19 @@
                 </label>
                 <input type="text" class="form-control" id="inputUserName" placeholder="กรอกชื่อของคุณ" required>
             </div>
-
+            
+            <div style="margin-bottom: 20px;">
+                <label for="inputUserGroup" style="font-weight: bold; display: block; margin-bottom: 10px;">
+                    กลุ่มผู้เข้าทำแบบทดสอบ:
+                </label>
+                <select class="form-control" id="inputUserGroup" required>
+                    <option value="">-- กรุณาเลือกกลุ่ม --</option>
+                    <option value="Nursery">กลุ่มเนอสเซอรี่</option>
+                    <option value="NewTSRsOnboarding">กลุ่ม New TSRs On boarding</option>
+                    <option value="NewTSRs">กลุ่ม New TSRs</option>
+                    <option value="ExistingTSRs">กลุ่ม TSRs existing</option>
+                    </select>
+            </div>
             <div style="margin-bottom: 30px;">
                 <label style="font-weight: bold; display: block; margin-bottom: 10px;">
                     ระดับความยากของแบบทดสอบ:
@@ -160,7 +172,7 @@
         
         <div id="testSection" style="display: none;">
             
-            <div id="section1Div" style="display: none;">
+            <div id="section1Div">
                 <h2>🗣️ ช่วงที่ 1: เปิดตัว/โต้ตอบต้นสาย (เทิร์นที่ <span id="turnSpan">1</span>/<span id="maxTurnSpan">5</span>)</h2>
                 <audio id="customerAudio" src=""></audio>
                 <button id="recordBtn">🎙️ เริ่มบันทึกเสียง (พนักงาน)</button>
@@ -198,13 +210,13 @@
             </div>
 
             <div id="section4Div" style="display: none;">
-                <h2>🏥 ช่วงที่ 4: คำถามสุขภาพ (<span id="hQName">คำถามหลัก Q1/1</span>)</h2>
+                <h2>🏥 ช่วงที่ 4: คำถามสุขภาพ (<span id="hQName">คำถามที่ 1/5: โรคสำคัญ</span>)</h2>
                 
                 <div id="healthQuestionDisplay" style="margin: 15px 0; padding: 15px; border: 1px dashed #d9534f; border-radius: 8px; background-color: #ffeaea; font-weight: bold; font-size: 18px; color: #333;">
                     <p>คำถามหลัก: ใน 5 ปีที่ผ่านมา ท่านเคยได้รับการบาดเจ็บ เจ็บป่วย หรือเข้ารับการรักษาตัวในโรงพยาบาลหรือไม่?</p>
                 </div>
                 <audio id="healthAudio"></audio>
-                <button disabled id="answerHBtn">🎙️ 1. บันทึกคำถามสุขภาพหลัก</button>
+                <button disabled id="answerHBtn">🎙️ 1. บันทึกคำถามสุขภาพ</button>
                 <button disabled id="nextSection5Btn">✅ จบบทที่ 4 (ไปช่วงที่ 5)</button>
                 <p id="hStatus">รอเริ่มช่วงที่ 4</p>
                 <hr>
@@ -269,89 +281,93 @@
         let maxTurns;
         let maxQ;
         let maxC;
-        let maxH = 1; 
+        let maxH = 5; 
         let maxFollowUp = 5; 
         let maxA; 
         
-        // Difficulty Configurations (จาก simulet.html)
+        // Difficulty Configurations 
         const difficultyConfig = {
-            easy: { S1: 1, S2: 3, S3: 3, S4: 1, S5: 7, label: "ง่าย (Easy)" }, 
-            hard: { S1: 5, S2: 8, S3: 8, S4: 1, S5: 7, label: "ยาก (Hard)" }, 
-            harder: { S1: 10, S2: 10, S3: 10, S4: 1, S5: 7, label: "ยากขึ้น (Harder)" } 
+            easy: { S1: 3, S2: 5, S3: 3, S4: 5, S5: 7, label: "ง่าย (Easy)" }, 
+            hard: { S1: 5, S2: 8, S3: 8, S4: 5, S5: 7, label: "ยาก (Hard)" }, 
+            harder: { S1: 10, S2: 10, S3: 10, S4: 5, S5: 7, label: "ยากขึ้น (Harder)" } 
         };
 
-        // --- 2. Audio Files URL (จาก simulet.html) ---
-        // ** FIX: DECLARE audioCache ONLY ONCE **
-        const audioCache = {};
+        // --- 2. Audio Files URL (ใช้ชุดไฟล์จากโค้ดประกันสุขภาพเดิม) ---
+        let audioCache = {};
 
-        // S1: เปิดตัว/โต้ตอบต้นสาย (9 files: Index 0 to 8. Q9 is Index 8)
+        // S1: เปิดตัว/โต้ตอบต้นสาย (URL จาก Test.thml.txt)
         const allCustomerReplies = [
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s1_1.m4a", // Index 0
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s1_2.m4a", // Index 1
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s1_3.m4a", // Index 2
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s1_4.m4a", // Index 3
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s1_5.m4a", // Index 4
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s1_6.m4a", // Index 5
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s1_7.m4a", // Index 6
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s1_8.m4a", // Index 7
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s1_9.m4a" // Index 8 (Q9) <-- S1 FINAL FILE
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q1_fe75e00d-70f8-429a-806f-ae77f5cde2de.webm", // Index 0 (Q1)
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q2_a68fb010-ec6c-47c2-95b2-d839553fe4e7.webm", // Index 1 (Q2)
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q3_d974acce-1bc1-4473-a9f6-d49a256636ab.webm", // Index 2 (Q3)
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q4_c3dd3875-fac4-4ad0-96d7-31adf9175c69.webm", // Index 3 (Q4)
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q5_60ca36aa-3425-4824-987a-ff6b7fd7dbe1.webm", // Index 4 (Q5)
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q7_490b0134-6446-4708-b86c-785d31306d07.webm", // Index 5 (Q7)
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q8_ad281257-c3b9-44dd-8ca5-0f383d438003.webm", // Index 6 (Q8)
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q9_36918038-0a42-4b6b-afc6-048a619f589d.webm", // Index 7 (Q9) <--- S1 FINAL FILE
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q10_68208219-7f94-48be-8446-d296d03711a3.webm", // Index 8 (Q10)
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q6_75f89f58-d31d-4edb-a47d-901d0dfc92d4.webm" // Index 9 (Q6) 
         ];
-        // S2: ตอบคำถามลูกค้า (10 files)
+        // S2: ตอบคำถามลูกค้า (URL จาก Test.thml.txt)
         const questionFiles = [
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s2_1.m4a", 
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s2_2.m4a", 
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s2_3.m4a", 
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s2_4.m4a", 
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s2_5.m4a", 
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s2_6.m4a", 
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s2_7.m4a", 
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s2_8.m4a", 
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s2_9.m4a", 
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s2_10.m4a" 
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part2/q1_426c99f9-e6cc-45d9-995a-04ea50effbea.webm", 
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part2/q2_512d6ed6-44bd-446b-a12b-8d664dfa6b68.webm", 
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part2/q3_2ba969e1-7421-41b9-823b-b6115eaf4711.webm", 
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part2/q4_52a4b384-ccd6-4e6c-86ef-e2b33f9a7c7e.webm", 
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part2/q5_36097a2d-20e3-4fef-bcf9-807076a90e3b.webm", 
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part2/q6_3dee5223-9b49-4976-93fa-7b0ed28b111e.webm", 
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part2/q7_e3bd2454-ca23-4519-bc65-503a28d5b27a.webm", 
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part2/q8_681b20de-322f-4fc6-8b50-ecd37e265ea6.webm", 
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part2/q9_a270c910-9a77-42a0-a2cc-7eaab6044f08.webm", 
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part2/q10_ed542cc5-bf90-4326-b296-21b88ef6334d.webm" 
         ];
-        // S3: ข้อโต้แย้ง (10 files: Index 0 to 9. Q10 is Index 9)
+        // S3: ข้อโต้แย้ง (URL จาก Test.thml.txt)
         const objectionFiles = [
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s3_1.m4a", // Index 0
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s3_2.m4a", // Index 1
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s3_3.m4a", // Index 2
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s3_4.m4a", // Index 3
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s3_5.m4a", // Index 4
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s3_6.m4a", // Index 5
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s3_7.m4a", // Index 6
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s3_8.m4a", // Index 7
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s3_9.m4a", // Index 8
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s3_10.m4a" // Index 9 (Q10) <-- S3 FINAL FILE
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part3/q1_cc419767-be8d-4131-a96c-9ebd05e17c0f.webm", // Index 0 (Q1)
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part3/q2_6c651abe-e8ce-4cc9-9393-4e8e3c0ab007.webm", // Index 1 (Q2)
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part3/q3_6eb4b44a-a1cb-42ff-a48e-12ecd0105b16.webm", // Index 2 (Q3)
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part3/q4_f6cfdb31-8c1a-4a10-9eaa-31adeff615bb.webm", // Index 3 (Q4)
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part3/q5_b126f965-079b-4f50-8818-4ea124cded47.webm", // Index 4 (Q5)
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part3/q6_6e6df3ec-2a70-44b9-ba6d-0f28f6650c51.webm", // Index 5 (Q6)
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part3/q7_1bd79b02-b363-4004-80f4-fcc2936fe8ec.webm", // Index 6 (Q7)
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part3/q8_0cca5181-e7e9-4635-914b-050430144c8c.webm", // Index 7 (Q8)
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part3/q9_36918038-0a42-4b6b-afc6-048a619f589d.webm", // Index 8 (Q9)
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part3/q10_fbba463f-b3a5-4671-a018-006d457ccd6b.webm" // Index 9 (Q10) <--- S3 FINAL FILE
         ];
         
-        // --- SECTION 5: Registration Steps (จาก simulet.html) ---
+        // --- SECTION 5: Registration Steps (URL จาก Test.thml.txt) ---
         const REGISTRATION_STEPS = 7; 
         const registrationScriptFiles = [
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s4_1.m4a", 
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s5_Birthday.m4a", 
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s4_2.m4a", 
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s4_3.m4a", 
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s4_4.m4a", 
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s4_5.m4a", 
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/s4_6.m4a" 
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/part1/P1Q2/health6_P1_P1Q2_1762518493530.webm", 
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/part1/P1Q3/health6_P1_P1Q3_1762518514882.webm", 
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/part1/P1Q4/health6_P1_P1Q4_1762518543370.webm", 
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/part1/P1Q5/health6_P1_P1Q5_1762518584458.webm", 
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/part1/P1Q6/health6_P1_P1Q6_1762518625330.webm", 
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/part1/P1Q7/health6_P1_P1Q7_1762518654346.webm", 
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/part1/P1Q8/health6_P1_P1Q8_1762518676715.webm"  
         ];
         const registrationStepNames = [
             "1. ขอสะกดชื่อ-นามสกุล", 
-            "2. ขอวันเดือนปีเกิด", 
-            "3. สอบถามที่อยู่",
-            "4. ขอเบอร์มือถือ",
-            "5. ผู้รับประโยชน์", 
+            "2. บัตรประชาชน", 
+            "3. เบอร์โทร",
+            "4. ที่อยู่ที่จัดส่งกรมธรรม์",
+            "5. ช่องทางชำระ", 
             "6. ลูกค้ายินยอมให้บริษัทBเก็บรวบรวมใช้ข้อมูลเพื่อการออกกรมธรรม์และทำการตลาดนะครับตกลงหรือโอเคก็ได้ครับ",
             "7. เพื่อเป็นการตอบรับโครงการ รบกวนลูกค้าพูดคำว่า ตกลงซื้อประกัน ให้ด้วยครับ"
         ];
 
-        // --- Section 4 Dynamic Health Check Data (จาก simulet.html) ---
-        const H_QUESTION_NAMES = ["คำถามสุขภาพหลัก (Yes/No)"]; 
+        // --- Section 4 Dynamic Health Check Data (URL/Data จาก Test.thml.txt) ---
+        const H_QUESTION_NAMES = [
+            "1. โรคสำคัญ (หัวใจ, มะเร็ง ฯลฯ)", "2. ประวัติผ่าตัด/รักษาตัว", "3. อาการผิดปกติทั่วไป",
+            "4. ประวัติบริษัทอื่น", "5. การใช้สารเสพติด"
+        ];
         const H_FOLLOW_UP_NAMES = [
             "1. เป็นมานานเท่าไหร่", "2. ลักษณะอาการเป็นอย่างไร",
             "3. วิธีการรักษาของแพทย์", "4. ตรวจครั้งล่าสุดเมื่อไหร่",
             "5. ผลตรวจเป็นอย่างไร"
         ];
         
+        // Data structure for the fixed health check flow
         const H_DISEASE_DATA = [
             {
                 name: "ความดันสูง", 
@@ -363,19 +379,9 @@
                     "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q5_172736d1-1e8f-4149-914a-66eafbc64efd.webm", 
                     "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q6_ff573737-1694-49ce-bf5a-d2853dd0b2ae.webm" 
                 ]
-            },
-            {
-                name: "เบาหวาน", 
-                yesTriggerUrl: "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part2/q1_diabetes.webm", 
-                followUpReplies: [ 
-                    "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part2/q2_diabetes.webm", 
-                    "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part2/q3_diabetes.webm", 
-                    "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part2/q4_diabetes.webm", 
-                    "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part2/q5_diabetes.webm", 
-                    "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part2/q6_diabetes.webm" 
-                ]
             }
         ];
+        const NO_ANSWER_URL = "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/part1/P1Q3/health5_P1_P1Q3_1762340907852.webm"; 
 
         // --- Utility Functions ---
         let selectedRandomFiles = []; 
@@ -386,8 +392,8 @@
             const s2Urls = questionFiles; 
             const s3Urls = objectionFiles; 
             
-            // ใช้ข้อมูลโรคที่ 0 (ความดันสูง) ตามโค้ด simulet.html เดิม
             const s4Urls = [
+                NO_ANSWER_URL, 
                 H_DISEASE_DATA[0].yesTriggerUrl, 
                 ...H_DISEASE_DATA[0].followUpReplies
             ];
@@ -409,10 +415,10 @@
             console.log("Preloading started. The test can proceed without network delays for customer audio.");
         }
 
-        // ** FIXED S1 FINAL FILE: Pinned to Index 8 (File 9) **
+        // ** FIXED S1 FINAL FILE: Pinned to Index 9 (File 10) **
         window.prepareTurnFiles = function() {
-            // Index 8 คือไฟล์ที่ 9 (s1_9.m4a)
-            const S1_FINAL_FILE_INDEX = 8; 
+            // Index 9 คือไฟล์ที่ 10 (q6_...webm)
+            const S1_FINAL_FILE_INDEX = 9; 
             const finaleFile = allCustomerReplies[S1_FINAL_FILE_INDEX]; 
             
             const sequentialFiles = allCustomerReplies.slice(0, maxTurns - 1);
@@ -441,15 +447,18 @@
         window.updateHealthQuestionUI = function() {
             const healthQuestionDisplay = document.getElementById('healthQuestionDisplay');
             if (isFollowUpMode) {
-                window.hQName.textContent = `ซักประวัติ Q${followUpStep + 1}/${maxFollowUp}: ${H_FOLLOW_UP_NAMES[followUpStep]}`;
+                window.hQName.textContent = `ซักประวัติ Q${followUpStep}/${maxFollowUp}: ${H_FOLLOW_UP_NAMES[followUpStep - 1]}`;
                 healthQuestionDisplay.innerHTML = `
-                    <p><strong>คำถามซักประวัติที่ต้องถาม:</strong> ${H_FOLLOW_UP_NAMES[followUpStep]}</p>
+                    <p><strong>คำถามซักประวัติที่ต้องถาม:</strong> ${H_FOLLOW_UP_NAMES[followUpStep - 1]}</p>
                 `;
-            } else {
-                window.hQName.textContent = `คำถามหลัก Q1/1: ${H_QUESTION_NAMES[0]}`;
+            } else if (currentHIndex < maxH) {
+                window.hQName.textContent = `คำถามที่ ${currentHIndex + 1}/${maxH}: ${H_QUESTION_NAMES[currentHIndex]}`;
                 healthQuestionDisplay.innerHTML = `
                     <p>คำถามหลัก: ใน 5 ปีที่ผ่านมา ท่านเคยได้รับการบาดเจ็บ เจ็บป่วย หรือเข้ารับการรักษาตัวในโรงพยาบาลหรือไม่?</p>
                 `;
+            } else {
+                window.hQName.textContent = `คำถามสุขภาพเสร็จสิ้น`;
+                healthQuestionDisplay.innerHTML = `<p>✅ เสร็จสิ้นการซักประวัติแล้ว</p>`;
             }
         }
 
@@ -488,7 +497,7 @@
         }
 
 
-        // --- BATCH UPLOAD Logic (FIXED FOR FLOAT/INTEGER) ---
+        // --- BATCH UPLOAD Logic (Store to Array) ---
         window.storeRecording = function(audioBlob, part, qNum, qText) {
             allRecordings.push({ audioBlob, part, qNum, qText });
             console.log(`✅ Recording saved locally: P${part}-Q${qNum}. Total recordings: ${allRecordings.length}`);
@@ -507,13 +516,15 @@
         window.uploadAllRecordings = async function() {
             const totalRecordings = allRecordings.length;
             if (totalRecordings === 0) {
-                 alert("ไม่พบไฟล์เสียงที่ต้องส่ง!");
+                 alert("ไม่พบไฟล์เสียงที่ต้องส่ง! กรุณาตรวจสอบว่าคุณได้บันทึกเสียงในทุกช่วงหรือไม่");
                  return;
             }
             
             window.loadingOverlay.style.display = "flex";
             const userName = window.inputUserName.value.trim() || `Anon User`;
             const difficulty = document.querySelector('input[name="difficulty"]:checked').value;
+            // ✅ ดึงค่า User Group ที่เลือก
+            const userGroup = window.inputUserGroup.value.trim();
             
             let successfulUploads = 0;
 
@@ -533,20 +544,7 @@
                     partStr = `S${part}`;
                 }
 
-                // --- FIX FOR 400 ERROR (P4-Q1.X FLOAT INSERTION) ---
-                let question_number_to_insert = Math.floor(qNum); // Default for non-float parts (1, 2, 3, 5)
-
-                if (part === 4 && qNum > 1) {
-                    // Convert P4 follow-up floats (1.1, 1.2, etc.) to integers (11, 12, etc.) for DB safety
-                    question_number_to_insert = Math.round(qNum * 10);
-                }
-                // --- END FIX ---
-
-
-                // Ensure file name also uses the fixed integer representation for P4 follow-ups for clarity
-                const qNumFile = (part === 4 && qNum > 1) ? question_number_to_insert : String(qNum).replace('.', '');
-                
-                const qStr = (part === 1 && qNum === maxTurns) ? 'FINALE' : `Q${qNumFile}`;
+                const qStr = (part === 1 && qNum === maxTurns) ? 'FINALE' : `Q${qNum}`;
                 const fileName = `${currentUserId}/${partStr}/${qStr}_${uuidv4()}.webm`; 
 
                 try {
@@ -566,11 +564,12 @@
                                 name: userName, 
                                 email: `anon_${currentUserId}@roleplay.com`, 
                                 part_number: part, 
-                                // Use the safe integer value
-                                question_number: question_number_to_insert, 
+                                question_number: qNum,
                                 question_text: qText + ` (Diff: ${difficulty})`, 
                                 audio_url: publicUrl,
-                                duration_seconds: audioBlob.size > 0 ? (audioBlob.size / 100000) : 0 
+                                duration_seconds: audioBlob.size > 0 ? (audioBlob.size / 100000) : 0,
+                                // ✅ ส่วนสำคัญที่เพิ่ม: ส่งค่า user_group ไปยัง Dashboard
+                                user_group: userGroup 
                             }
                         ]);
                     if (insertError) { throw insertError; }
@@ -597,7 +596,7 @@
             setTimeout(() => { window.loadingOverlay.style.display = "none"; }, 1500);
         }
         
-        // --- Main Recording Logic (Sequential/Fixed Finale Aware) ---
+        // --- Main Recording Logic (Modified for Batch Upload & DB Fix) ---
         window.toggleRecording = async function(type) {
             let statusElement, buttonElement, nextAutoAction, originalButtonText;
             let part, qNum, qText, chunks = [];
@@ -639,18 +638,24 @@
                 originalButtonText = '🎙️ 2. บันทึกเสียงตอบข้อโต้แย้ง';
             }
             else if (type === 5) { 
-                part = 4; qNum = 1; qText = `S4: คำถามสุขภาพหลัก ${H_DISEASE_DATA[0].name}`; 
+                part = 4; qNum = currentHIndex + 1; qText = `S4: คำถามสุขภาพหลัก Q${currentHIndex + 1}: ${H_QUESTION_NAMES[currentHIndex]}`;
                 statusElement = window.hStatusElement;
                 buttonElement = window.answerHBtn; 
                 nextAutoAction = window.playFixedHealthQuestion; 
-                originalButtonText = '🎙️ 1. บันทึกคำถามสุขภาพหลัก';
+                originalButtonText = '🎙️ 1. บันทึกคำถามสุขภาพ';
             } 
             else if (type === 7) { 
-                part = 4; qNum = 1 + (followUpStep + 1) * 0.1; qText = `S4: ซักประวัติ ${H_DISEASE_DATA[0].name} Q1.F${followUpStep + 1}: ${H_FOLLOW_UP_NAMES[followUpStep]}`;
+                part = 4; 
+                // *** FIX for Supabase 400 Error (Question Number must be Integer) ***
+                const baseNum = currentHIndex + 1; 
+                qNum = baseNum * 10 + followUpStep; // e.g., 4 * 10 + 1 = 41
+                // *******************************************************************
+
+                qText = `S4: ซักประวัติ ${H_DISEASE_DATA[0].name} Q${baseNum}.F${followUpStep}: ${H_FOLLOW_UP_NAMES[followUpStep - 1]}`;
                 statusElement = window.hStatusElement;
                 buttonElement = window.followUpQBtn; 
                 nextAutoAction = window.playFixedFollowUpQuestion; 
-                originalButtonText = `🎙️ บันทึกคำถามซักประวัติ Q${followUpStep + 1}`;
+                originalButtonText = `🎙️ บันทึกคำถามซักประวัติ Q${followUpStep}`;
             } 
             else if (type === 6) { 
                 part = 5; 
@@ -705,7 +710,7 @@
                     
                     if (type === 3) buttonElement.textContent = "⏹️ หยุดบันทึกสคริปต์ปิดการขาย";
                     else if (type === 4) buttonElement.textContent = "⏹️ หยุดบันทึกเสียงตอบข้อโต้แย้ง";
-                    else if (type === 5) buttonElement.textContent = "⏹️ หยุดบันทึกคำถามหลัก"; 
+                    else if (type === 5) buttonElement.textContent = "⏹️ หยุดบันทึกคำถามสุขภาพ"; 
                     else if (type === 7) buttonElement.textContent = "⏹️ หยุดบันทึกคำถามซักประวัติ"; 
                     else if (type === 6) buttonElement.textContent = `⏹️ หยุดบันทึกคำถามลงทะเบียนขั้นตอน ${aRound}`;
                     else if (type === 8) buttonElement.textContent = "⏹️ หยุดบันทึกเสียงนำเสนอ"; 
@@ -724,7 +729,6 @@
                 }
 
             } else {
-                // STOP LOGIC
                 buttonElement.textContent = "⏳ กำลังหยุดบันทึกและบันทึกในเครื่อง...";
                 buttonElement.disabled = true;
                 mediaRecorder.stop(); 
@@ -777,16 +781,11 @@
             }
         }
 
-        // --- Section 1.5, 2, 3, 4, 5 Functions (Sequential Flow) ---
+        // --- Section 1.5, 2, 3 Flow (Sequential/Fixed Indexing) ---
         
         window.initSection1_5 = function() {
-            // Sequential Display Logic
             document.getElementById('section1Div').style.display = 'none';
             document.getElementById('section1_5Div').style.display = 'block';
-            document.getElementById('section2Div').style.display = 'none';
-            document.getElementById('section3Div').style.display = 'none';
-            document.getElementById('section4Div').style.display = 'none';
-            document.getElementById('section5Div').style.display = 'none';
 
             window.nextRoundBtn.disabled = true; 
             window.recordBtn.disabled = true; 
@@ -806,13 +805,8 @@
         }
 
         window.initSection2 = function() {
-            // Sequential Display Logic
-            document.getElementById('section1Div').style.display = 'none';
             document.getElementById('section1_5Div').style.display = 'none';
             document.getElementById('section2Div').style.display = 'block';
-            document.getElementById('section3Div').style.display = 'none';
-            document.getElementById('section4Div').style.display = 'none';
-            document.getElementById('section5Div').style.display = 'none';
 
             window.nextSection2Btn.disabled = true; 
             window.pitchRecordBtn.disabled = true; 
@@ -864,13 +858,8 @@
         }
 
         window.initSection3 = function() {
-            // Sequential Display Logic
-            document.getElementById('section1Div').style.display = 'none';
-            document.getElementById('section1_5Div').style.display = 'none';
             document.getElementById('section2Div').style.display = 'none';
             document.getElementById('section3Div').style.display = 'block';
-            document.getElementById('section4Div').style.display = 'none';
-            document.getElementById('section5Div').style.display = 'none';
 
             window.nextSection3Btn.disabled = true;
             window.startQBtn.disabled = true;
@@ -949,13 +938,8 @@
         
         // S4: Init Section 4
         window.initSection4 = function() {
-            // Sequential Display Logic
-            document.getElementById('section1Div').style.display = 'none';
-            document.getElementById('section1_5Div').style.display = 'none';
-            document.getElementById('section2Div').style.display = 'none';
             document.getElementById('section3Div').style.display = 'none';
             document.getElementById('section4Div').style.display = 'block';
-            document.getElementById('section5Div').style.display = 'none';
 
             window.nextSection4Btn.disabled = true;
             window.nextSection5Btn.disabled = true;
@@ -972,25 +956,34 @@
             window.answerHBtn.style.display = 'block';
             if (window.followUpQBtn) window.followUpQBtn.style.display = 'none'; 
             
-            window.answerHBtn.textContent = '🎙️ 1. บันทึกคำถามสุขภาพหลัก';
-            window.hStatusElement.textContent = `✅ ช่วงที่ 3 เสร็จสิ้น! กรุณาบันทึกคำถามสุขภาพหลัก`;
-            alert("จบบทที่ 3 แล้ว! เริ่มช่วงที่ 4: คำถามสุขภาพ (1 คำถามหลัก และ 5 ซักประวัติ)");
+            window.answerHBtn.textContent = '🎙️ 1. บันทึกคำถามสุขภาพ';
+            window.hStatusElement.textContent = `✅ ช่วงที่ 3 เสร็จสิ้น! กรุณาบันทึกคำถามสุขภาพที่ ${currentHIndex + 1}/${maxH}`;
+            alert("จบบทที่ 3 แล้ว! เริ่มช่วงที่ 4: คำถามสุขภาพ (5 คำถามมาตรฐาน)");
         }
         
-        // S4: Play Fixed Health Question Logic (Always leads to follow-up in this flow)
+        // S4: Play Fixed Health Question Logic 
         window.playFixedHealthQuestion = function() {
             window.answerHBtn.disabled = true;
-            currentHIndex = 1; // Mark main question as done
-            isFollowUpMode = true; 
             
-            const customerReplyUrl = selectedDisease.yesTriggerUrl;
+            let customerReplyUrl;
+            let isYes;
+            
+            // Fixed Logic: Q4 (Index 3) is YES, others are NO
+            if (currentHIndex === 3) {
+                isYes = true;
+                customerReplyUrl = selectedDisease.yesTriggerUrl;
+            } else {
+                isYes = false;
+                customerReplyUrl = NO_ANSWER_URL;
+            }
 
             const audioEl = window.getCachedAudioElement(customerReplyUrl, true);
             window.healthAudio = audioEl;
 
             const attemptPlay = () => {
                 audioEl.play();
-                window.hStatusElement.textContent = `🔊 กำลังเล่นคำตอบลูกค้า: ใช่ค่ะ/ครับ เคยเป็น${selectedDisease.name}...`;
+                const replyText = isYes ? `ใช่ (โรค: ${selectedDisease.name})` : `ไม่เคยค่ะ/ครับ`;
+                window.hStatusElement.textContent = `🔊 กำลังเล่นคำตอบลูกค้า: "${replyText}"...`;
             };
             
             audioEl.onloadeddata = attemptPlay;
@@ -999,25 +992,39 @@
             }
             
             audioEl.onended = () => {
-                window.updateHealthQuestionUI(); 
+                audioEl.onloadeddata = null;
+                audioEl.onended = null;
                 
-                window.hStatusElement.textContent = `🎤 พร้อมบันทึกคำถามซักประวัติ Q1 (${H_FOLLOW_UP_NAMES[0]})`;
-                window.answerHBtn.style.display = 'none'; 
-                window.followUpQBtn.style.display = 'block'; 
-                window.followUpQBtn.textContent = '🎙️ บันทึกคำถามซักประวัติ Q1';
-                window.followUpQBtn.disabled = false; 
+                if (isYes) {
+                    isFollowUpMode = true; 
+                    followUpStep = 1; 
+                    window.updateHealthQuestionUI(); 
+                    
+                    window.hStatusElement.textContent = `🎤 พร้อมบันทึกคำถามซักประวัติ Q${followUpStep} (${H_FOLLOW_UP_NAMES[followUpStep - 1]})`;
+                    window.answerHBtn.style.display = 'none'; 
+                    window.followUpQBtn.style.display = 'block'; 
+                    window.followUpQBtn.textContent = `🎙️ บันทึกคำถามซักประวัติ Q${followUpStep}`;
+                    window.followUpQBtn.disabled = false; 
+                } else {
+                    currentHIndex++;
+                    if (currentHIndex < maxH) {
+                        window.updateHealthQuestionUI(); 
+                        window.hStatusElement.textContent = `✅ คำตอบลูกค้าคือ 'ไม่เคย' กรุณาบันทึกคำถามสุขภาพที่ ${currentHIndex + 1}/${maxH}`;
+                        window.answerHBtn.disabled = false;
+                        window.answerHBtn.textContent = `🎙️ ${currentHIndex + 1}. บันทึกคำถามสุขภาพ`;
+                    } else {
+                        window.updateHealthQuestionUI();
+                        window.hStatusElement.textContent = `🎉 คำถามสุขภาพครบ ${maxH} ข้อแล้ว! กรุณากด 'จบบทที่ 4' เพื่อไปช่วงที่ 5`;
+                        window.nextSection5Btn.disabled = false;
+                        window.answerHBtn.disabled = true;
+                    }
+                }
             };
         }
         
         // S4: Play Fixed Follow-up Question Logic
         window.playFixedFollowUpQuestion = function() {
-            followUpStep++; 
             window.followUpQBtn.disabled = true;
-            
-            if (followUpStep > maxFollowUp) { 
-                 // Should not be possible with the check below, but as a safeguard
-                 return;
-            }
             
             const customerReplyUrl = selectedDisease.followUpReplies[followUpStep - 1]; 
 
@@ -1035,17 +1042,32 @@
             }
             
             audioEl.onended = () => {
-                if (followUpStep < maxFollowUp) {
+                followUpStep++; 
+
+                if (followUpStep > maxFollowUp) { 
+                    isFollowUpMode = false;
+                    currentHIndex++; 
+                    
+                    if (currentHIndex < maxH) {
+                        window.updateHealthQuestionUI();
+                        window.hStatusElement.textContent = `✅ สอบสวนโรคเสร็จสิ้น! กรุณาบันทึกคำถามสุขภาพที่ ${currentHIndex + 1}/${maxH}`;
+                        window.answerHBtn.style.display = 'block';
+                        window.followUpQBtn.style.display = 'none';
+                        window.answerHBtn.disabled = false;
+                        window.answerHBtn.textContent = `🎙️ ${currentHIndex + 1}. บันทึกคำถามสุขภาพ`;
+                    } else {
+                        window.updateHealthQuestionUI();
+                        window.hStatusElement.textContent = `🎉 คำถามสุขภาพครบ ${maxH} ข้อแล้ว! กรุณากด 'จบบทที่ 4' เพื่อไปช่วงที่ 5`;
+                        window.followUpQBtn.style.display = 'none';
+                        window.answerHBtn.style.display = 'none';
+                        window.nextSection5Btn.disabled = false;
+                    }
+                } else {
                     window.updateHealthQuestionUI(); 
                     
-                    window.hStatusElement.textContent = `🎤 พร้อมบันทึกคำถามซักประวัติ Q${followUpStep + 1} (${H_FOLLOW_UP_NAMES[followUpStep]})`;
-                    window.followUpQBtn.textContent = `🎙️ บันทึกคำถามซักประวัติ Q${followUpStep + 1}`;
+                    window.hStatusElement.textContent = `🎤 พร้อมบันทึกคำถามซักประวัติ Q${followUpStep} (${H_FOLLOW_UP_NAMES[followUpStep - 1]})`;
+                    window.followUpQBtn.textContent = `🎙️ บันทึกคำถามซักประวัติ Q${followUpStep}`;
                     window.followUpQBtn.disabled = false;
-                } else {
-                    window.hStatusElement.textContent = `🎉 เสร็จสิ้นการซักประวัติ ${selectedDisease.name} ครบ 5 ข้อแล้ว! กรุณากด 'จบบทที่ 4'`;
-                    window.followUpQBtn.style.display = 'none';
-                    window.nextSection5Btn.disabled = false;
-                    document.getElementById('healthQuestionDisplay').innerHTML = `<p>✅ เสร็จสิ้นการซักประวัติแล้ว</p>`;
                 }
             };
         }
@@ -1053,11 +1075,6 @@
         // --- Section 5 Functions (Registration - Sequential Flow) ---
         
         window.initSection5 = function() {
-            // Sequential Display Logic
-            document.getElementById('section1Div').style.display = 'none';
-            document.getElementById('section1_5Div').style.display = 'none';
-            document.getElementById('section2Div').style.display = 'none';
-            document.getElementById('section3Div').style.display = 'none';
             document.getElementById('section4Div').style.display = 'none';
             document.getElementById('section5Div').style.display = 'block';
 
@@ -1126,9 +1143,17 @@
 
         // --- Final Save Function (Initiates Batch Upload) ---
         window.saveAllRecordings = function() {
+            const userGroup = window.inputUserGroup.value;
+
             if (!window.inputUserName.value.trim()) { 
                  alert("กรุณากรอกชื่อ-นามสกุล/รหัสพนักงานก่อนทำการบันทึกเสร็จสิ้น");
                  window.inputUserName.focus();
+                 return;
+            }
+            
+            if (!userGroup) { 
+                 alert("กรุณาเลือกกลุ่มผู้เข้าทำแบบทดสอบก่อนทำการบันทึกเสร็จสิ้น");
+                 window.inputUserGroup.focus();
                  return;
             }
             
@@ -1140,7 +1165,6 @@
 
         // --- Initialization and Event Listeners ---
         function initializeUserAndDOM() {
-            // 1. Assign User ID
             let userId = localStorage.getItem(USER_ID_KEY);
             if (!userId) {
                 userId = uuidv4();
@@ -1148,33 +1172,29 @@
             }
             currentUserId = userId;
             
-            // 2. DOM Element Assignments (Sections)
             window.registrationSection = document.getElementById("registrationSection");
             window.testSection = document.getElementById("testSection");
             window.startTestBtn = document.getElementById("startTestBtn");
             window.inputUserName = document.getElementById('inputUserName'); 
+            
+            // ✅ DOM ใหม่สำหรับ User Group
+            window.inputUserGroup = document.getElementById('inputUserGroup'); 
+
             window.loadingOverlay = document.getElementById("loadingOverlay");
             window.loadingText = document.getElementById("loadingText");
             window.uploadProgressBar = document.getElementById("uploadProgressBar");
             window.certBtn = document.getElementById("certBtn");
 
-            // Section 1
-            window.section1Div = document.getElementById("section1Div");
             window.turnSpan = document.getElementById("turnSpan");
             window.maxTurnSpan = document.getElementById("maxTurnSpan");
             window.s1StatusElement = document.getElementById("status"); 
             window.recordBtn = document.getElementById("recordBtn");
             window.nextRoundBtn = document.getElementById("nextRoundBtn");
             window.customerAudio = document.getElementById("customerAudio");
-            
-            // Section 1.5
-            window.section1_5Div = document.getElementById("section1_5Div");
             window.pitchRecordBtn = document.getElementById("pitchRecordBtn");
             window.nextSection2Btn = document.getElementById("nextSection2Btn");
             window.pitchStatusElement = document.getElementById("pitchStatus");
             
-            // Section 2
-            window.section2Div = document.getElementById("section2Div");
             window.qRoundSpan = document.getElementById("qRound");
             window.maxQSpan = document.getElementById("maxQSpan");
             window.s2StatusElement = document.getElementById("qStatus"); 
@@ -1183,8 +1203,6 @@
             window.nextSection3Btn = document.getElementById("nextSection3Btn");
             window.questionAudio = document.getElementById("questionAudio");
             
-            // Section 3
-            window.section3Div = document.getElementById("section3Div");
             window.cRoundSpan = document.getElementById("cRound");
             window.maxCSpan = document.getElementById("maxCSpan");
             window.s3StatusElement = document.getElementById("cStatus"); 
@@ -1193,15 +1211,12 @@
             window.objectionAudio = document.getElementById("objectionAudio");
             window.nextSection4Btn = document.getElementById("nextSection4Btn");
             
-            // Section 4
-            window.section4Div = document.getElementById("section4Div");
             window.hQName = document.getElementById("hQName");
             window.hStatusElement = document.getElementById("hStatus");
             window.answerHBtn = document.getElementById("answerHBtn");
             window.nextSection5Btn = document.getElementById("nextSection5Btn");
             window.healthAudio = document.getElementById("healthAudio");
             
-            // Dynamic Button for S4
             window.followUpQBtn = document.createElement('button'); 
             window.followUpQBtn.id = 'followUpQBtn';
             window.followUpQBtn.style.display = 'none';
@@ -1215,8 +1230,6 @@
                  parentContainer.insertBefore(window.followUpQBtn, window.nextSection5Btn);
             }
             
-            // Section 5
-            window.section5Div = document.getElementById("section5Div");
             window.aRoundSpan = document.getElementById("aRound");
             window.maxASpan = document.getElementById("maxASpan");
             window.aStatusElement = document.getElementById("aStatus"); 
@@ -1224,8 +1237,7 @@
             window.finalSaveBtn = document.getElementById("finalSaveBtn");
             window.agreementAudio = document.getElementById("agreementAudio");
             window.stepList = document.getElementById("stepList"); 
-
-            // 3. Bind Event Listeners
+            
             window.startTestBtn.addEventListener('click', startTest); 
             window.recordBtn.addEventListener('click', () => window.toggleRecording(1));
             window.nextRoundBtn.addEventListener('click', window.initSection1_5); 
@@ -1246,17 +1258,21 @@
             window.finalSaveBtn.addEventListener('click', window.saveAllRecordings); 
             
             window.certBtn.addEventListener('click', window.generateCertificate);
-
-            // Initialize recording array and fixed disease on load
-            allRecordings = [];
-            selectedDisease = H_DISEASE_DATA[0];
         }
 
         window.startTest = function() {
             const userName = window.inputUserName.value.trim();
+            const userGroup = window.inputUserGroup.value;
+
             if (!userName) {
                 alert("กรุณากรอกชื่อ-นามสกุล/รหัสพนักงานก่อนเริ่มทำแบบทดสอบ");
                 window.inputUserName.focus();
+                return;
+            }
+            
+            if (!userGroup) {
+                alert("กรุณาเลือกกลุ่มผู้เข้าทำแบบทดสอบก่อนเริ่มทำแบบทดสอบ");
+                window.inputUserGroup.focus();
                 return;
             }
             
@@ -1277,14 +1293,12 @@
             window.registrationSection.style.display = 'none';
             window.testSection.style.display = 'block';
 
-            // ** CRITICAL MODIFICATION for Sequential Display **
-            window.section1Div.style.display = 'block'; 
-            window.section1_5Div.style.display = 'none';
-            window.section2Div.style.display = 'none';
-            window.section3Div.style.display = 'none';
-            window.section4Div.style.display = 'none';
-            window.section5Div.style.display = 'none';
-            // **********************************************
+            document.getElementById('section1Div').style.display = 'block';
+            document.getElementById('section1_5Div').style.display = 'none';
+            document.getElementById('section2Div').style.display = 'none';
+            document.getElementById('section3Div').style.display = 'none';
+            document.getElementById('section4Div').style.display = 'none';
+            document.getElementById('section5Div').style.display = 'none';
 
             window.preloadCriticalAudio();
             window.prepareTurnFiles();
