@@ -230,8 +230,7 @@
         let isSuccess = true;
 
         try {
-            // 🚨 CRITICAL FIX: ใช้ .or() สำหรับ TEXT Filter
-            // product_type.eq.health,product_type.eq.all
+            // 🚨 CRITICAL FIX: ใช้ .or() สำหรับ TEXT Filter (product_type.eq.health,product_type.eq.all)
             const orFilter = `product_type.eq.${CURRENT_PRODUCT_ID},product_type.eq.all`;
             
             // 2.0 Config (โหลดก่อนเพื่อป้องกัน TypeError: Cannot read properties of undefined (reading 'S1'))
@@ -248,7 +247,7 @@
             const { data: s1Data, error: s1Error } = await window.supabase
                 .from('customer_replies_s1')
                 .select('turn_index, audio_url, is_finale')
-                .or(orFilter) // 🚨 FIXED: ใช้ .or()
+                .or(orFilter) 
                 .order('turn_index', { ascending: true });
             if (s1Error) throw s1Error;
             s1Turns = s1Data;
@@ -257,7 +256,7 @@
             const { data: s2Data, error: s2Error } = await window.supabase
                 .from('questions_s2')
                 .select('q_index, audio_url, q_text')
-                .or(orFilter) // 🚨 FIXED: ใช้ .or()
+                .or(orFilter)
                 .order('q_index', { ascending: true });
             if (s2Error) throw s2Error;
             s2Questions = s2Data;
@@ -266,7 +265,7 @@
             const { data: s3Data, error: s3Error } = await window.supabase
                 .from('objections_s3')
                 .select('ob_index, audio_url, ob_text')
-                .or(orFilter) // 🚨 FIXED: ใช้ .or()
+                .or(orFilter) 
                 .order('ob_index', { ascending: true });
             if (s3Error) throw s3Error;
             s3Objections = s3Data;
@@ -275,7 +274,7 @@
             const { data: s4qData, error: s4qError } = await window.supabase
                 .from('health_questions_s4')
                 .select('*') 
-                .or(orFilter) // 🚨 FIXED: ใช้ .or()
+                .or(orFilter)
                 .order('q_index', { ascending: true });
             if (s4qError) throw s4qError;
             s4HealthQuestions = s4qData;
@@ -285,7 +284,7 @@
             const { data: s4fuNameData, error: s4fuNameError } = await window.supabase
                 .from('s4_follow_up_names')
                 .select('*')
-                .or(orFilter) // 🚨 FIXED: ใช้ .or()
+                .or(orFilter) 
                 .order('step_index', { ascending: true });
             if (s4fuNameError) throw s4fuNameError;
             s4FollowUpNames = s4fuNameData;
@@ -294,7 +293,7 @@
             const { data: s4furData, error: s4furError } = await window.supabase
                 .from('s4_follow_up_replies')
                 .select('*')
-                .or(orFilter) // 🚨 FIXED: ใช้ .or()
+                .or(orFilter)
                 .order('step_index', { ascending: true });
             if (s4furError) throw s4furError;
             s4FollowUpReplies = s4furData;
@@ -303,7 +302,7 @@
             const { data: s5Data, error: s5Error } = await window.supabase
                 .from('scripts_s5')
                 .select('*')
-                .or(orFilter) // 🚨 FIXED: ใช้ .or()
+                .or(orFilter)
                 .order('step_index', { ascending: true });
             if (s5Error) throw s5Error;
             s5Scripts = s5Data;
@@ -342,7 +341,7 @@
         document.getElementById('productNameDisplay').textContent = `ผลิตภัณฑ์: ${CURRENT_PRODUCT_ID.toUpperCase()}`;
         document.getElementById('productNameDisplayInfo').textContent = CURRENT_PRODUCT_ID.toUpperCase();
         
-        // 🚨 BIND EVENT LISTENER HERE (Fixes the issue from previous steps where startTest wasn't globally accessible)
+        // 🚨 BIND EVENT LISTENER HERE
         document.getElementById('startTestBtn').addEventListener('click', startTest);
         
         fetchInitialData();
@@ -353,9 +352,8 @@
         const selectedDifficulty = document.querySelector('input[name="difficulty"]:checked').value;
         const config = difficultyConfig[selectedDifficulty]; // 🚨 FIXED: ใช้ config จากตัวแปร Global
 
-        if (!config || s1Turns.length === 0) {
-            // หาก config หรือ S1 ยังว่างเปล่า (เนื่องจาก RLS fail)
-            alert('ข้อมูล S1 หรือ Difficulty Config ยังไม่พร้อม กรุณาตรวจสอบ RLS Policy ใน Supabase');
+        if (!config) {
+            alert('ข้อมูล Difficulty Config ไม่พร้อมใช้งาน กรุณาลองโหลดหน้าใหม่');
             return;
         }
 
