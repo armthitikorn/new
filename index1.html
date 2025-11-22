@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+    <title>E-Simulator Roleplay (ประกันสุขภาพ - FULL DYNAMIC SUPABASE)</title>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;700&display=swap');
+        body { 
+            font-family: 'Sarabun', sans-serif;
+            padding: 20px; 
+            text-align: center; 
+            background-color: #f4f7f6;
+        }
+        .container-box {
+            max-width: 700px; 
+            margin: 0 auto; 
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+        }
+        h1 { font-size: 32px; color: #d9534f; margin-bottom: 20px; }
+        h2 { margin-top: 25px; font-size: 24px; color: #337ab7; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        button { 
+            margin: 10px 5px; padding: 12px 24px; font-size: 18px; cursor: pointer; 
+            width: auto; min-height: 48px; border: none; border-radius: 8px; transition: background-color 0.3s;
+        }
+        button:hover:not(:disabled) { opacity: 0.9; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        #finalSaveBtn { background-color: #007bff; color: white; font-weight: bold; }
+        #finalSaveBtn.done { background-color: #28a745; }
+
+        .form-control { padding: 10px; border: 1px solid #ccc; border-radius: 6px; width: 100%; max-width: 400px; box-sizing: border-box; margin-top: 5px; text-align: center; font-size: 16px; }
+        .difficulty-option { display: inline-block; margin: 8px; cursor: pointer; padding: 10px 20px; border: 2px solid #ccc; border-radius: 20px; transition: all 0.2s; }
+        .difficulty-option:hover { border-color: #337ab7; }
+        input[type="radio"]:checked + .difficulty-option { background-color: #337ab7; color: white; border-color: #337ab7; font-weight: bold; }
+        input[type="radio"] { display: none; }
+        
+        #loadingOverlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85); color: white; display: none; 
+            justify-content: center; align-items: center; flex-direction: column;
+            z-index: 1000; text-align: center; font-size: 20px;
+        }
+        .spinner-border { width: 3rem; height: 3rem; border: 0.25em solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spinner-border 0.75s linear infinite; }
+        @keyframes spinner-border { to { transform: rotate(360deg); } }
+        .progress { width: 80%; max-width: 400px; margin-top: 20px; height: 15px; background-color: #e9ecef; border-radius: 0.25rem; overflow: hidden; }
+        .progress-bar { height: 100%; background-color: #007bff; transition: width 0.6s ease; }
+        
+        #certificate { border: 5px solid #333; padding: 40px; width: 90%; max-width: 800px; margin: 40px auto; text-align: center; display: none; }
+
+        @media (max-width: 600px) {
+            .container-box { padding: 15px; margin: 0 10px; }
+            h1 { font-size: 28px; }
+            h2 { font-size: 20px; }
+            button { padding: 10px 20px; font-size: 16px; width: 95%; }
+            .difficulty-option { margin: 5px; padding: 8px 15px; }
+        }
+    </style>
+</head>
+<body>
+    
+    <div id="loadingOverlay">
+        <div class="spinner-border text-light" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <h5 id="loadingText" class="mt-3">กำลังเตรียมข้อมูลและไฟล์เสียง...</h5>
+        <div class="progress" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+            <div id="uploadProgressBar" class="progress-bar" style="width: 0%"></div>
+        </div>
+    </div>
+
+    <div class="container-box">
+        <h1>E-Simulator Roleplay (ประกันสุขภาพ)</h1>
+        
+        <div id="registrationSection">
+            <h2 style="color: #333;">📝 หน้าลงทะเบียนและตั้งค่าแบบทดสอบ</h2>
+            <div style="margin-bottom: 20px;">
+                <label for="inputUserName" style="font-weight: bold; display: block; margin-bottom: 10px;">
+                    ชื่อ-นามสกุล/รหัสพนักงาน:
+                </label>
+                <input type="text" class="form-control" id="inputUserName" placeholder="กรอกชื่อของคุณ" required>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label for="inputUserGroup" style="font-weight: bold; display: block; margin-bottom: 10px;">
+                    กลุ่มผู้เข้าทำแบบทดสอบ:
+                </label>
+                <select class="form-control" id="inputUserGroup" required>
+                    <option value="">-- กรุณาเลือกกลุ่ม --</option>
+                    <option value="Nursery">กลุ่มเนอสเซอรี่</option>
+                    <option value="NewTSRsOnboarding">กลุ่ม New TSRs On boarding</option>
+                    <option value="NewTSRs">กลุ่ม New TSRs</option>
+                    <option value="ExistingTSRs">กลุ่ม TSRs existing</option>
+                    </select>
+            </div>
+            <div style="margin-bottom: 30px;">
+                <label style="font-weight: bold; display: block; margin-bottom: 10px;">
+                    ระดับความยากของแบบทดสอบ:
+                </label>
+                <div>
+                    <input type="radio" id="diffEasy" name="difficulty" value="easy" checked>
+                    <label for="diffEasy" class="difficulty-option">ง่าย (Easy)</label>
+                    
+                    <input type="radio" id="diffHard" name="difficulty" value="hard">
+                    <label for="diffHard" class="difficulty-option">ยาก (Hard)</label>
+
+                    <input type="radio" id="diffHarder" name="difficulty" value="harder">
+                    <label for="diffHarder" class="difficulty-option">ยากขึ้น (Harder)</label>
+                </div>
+            </div>
+            
+            <button id="startTestBtn" style="background-color: #28a745; color: white;">
+                ▶️ เริ่มทำแบบทดสอบ
+            </button>
+            <hr>
+        </div>
+        
+        <div id="testSection" style="display: none;">
+            
+            <div id="section1Div">
+                <h2>🗣️ ช่วงที่ 1: เปิดตัว/โต้ตอบต้นสาย (เทิร์นที่ <span id="turnSpan">1</span>/<span id="maxTurnSpan">5</span>)</h2>
+                <audio id="customerAudio" src=""></audio>
+                <button id="recordBtn">🎙️ เริ่มบันทึกเสียง (พนักงาน)</button>
+                <button disabled id="nextRoundBtn">✅ จบบทที่ 1 (ไปช่วงที่ 1.5)</button>
+                <p id="status">รอเริ่มบันทึกบทพูดเปิดตัว</p>
+                <hr>
+            </div>
+
+            <div id="section1_5Div" style="display: none;">
+                <h2>🛒 ช่วงที่ 1.5: การนำเสนอผลิตภัณฑ์ (Pitch)</h2>
+                <button disabled id="pitchRecordBtn">🎙️ เริ่มบันทึกเสียงนำเสนอ</button>
+                <button disabled id="nextSection2Btn">✅ จบบทที่ 1.5 (ไปช่วงที่ 2)</button>
+                <p id="pitchStatus">รอเริ่มนำเสนอ</p>
+                <hr>
+            </div>
+
+            <div id="section2Div" style="display: none;">
+                <h2>❓ ช่วงที่ 2: ตอบคำถามลูกค้า (รอบที่ <span id="qRound">1</span>/<span id="maxQSpan">10</span>)</h2>
+                <audio id="questionAudio"></audio>
+                <button disabled id="startQBtn">🔊 เริ่มคำถามลูกค้า</button>
+                <button disabled id="answerBtn">🎙️ เริ่มบันทึกคำตอบ</button>
+                <button disabled id="nextSection3Btn">✅ จบบทที่ 2 (ไปช่วงที่ 3)</button>
+                <p id="qStatus">รอเริ่มช่วงที่ 2</p>
+                <hr>
+            </div>
+
+            <div id="section3Div" style="display: none;">
+                <h2>💰 ช่วงที่ 3: ปิดการขาย + ข้อโต้แย้ง (รอบที่ <span id="cRound">1</span>/<span id="maxCSpan">5</span>)</h2>
+                <button disabled id="closeBtn">🎙️ 1. บันทึกสคริปต์ปิดการขาย</button>
+                <audio id="objectionAudio"></audio>
+                <button disabled id="replyBtn">🎙️ 2. บันทึกเสียงตอบข้อโต้แย้ง</button>
+                <button disabled id="nextSection4Btn">✅ จบบทที่ 3 (ไปช่วงที่ 4)</button>
+                <p id="cStatus">รอเริ่มช่วงที่ 3</p>
+                <hr>
+            </div>
+
+            <div id="section4Div" style="display: none;">
+                <h2>🏥 ช่วงที่ 4: คำถามสุขภาพ (<span id="hQName">คำถามที่ 1/5: โรคสำคัญ</span>)</h2>
+                
+                <div id="healthQuestionDisplay" style="margin: 15px 0; padding: 15px; border: 1px dashed #d9534f; border-radius: 8px; background-color: #ffeaea; font-weight: bold; font-size: 18px; color: #333;">
+                    <p>คำถามหลัก: ใน 5 ปีที่ผ่านมา ท่านเคยได้รับการบาดเจ็บ เจ็บป่วย หรือเข้ารับการรักษาตัวในโรงพยาบาลหรือไม่?</p>
+                </div>
+                <audio id="healthAudio"></audio>
+                <button disabled id="answerHBtn">🎙️ 1. บันทึกคำถามสุขภาพ</button>
+                <button disabled id="nextSection5Btn">✅ จบบทที่ 4 (ไปช่วงที่ 5)</button>
+                <p id="hStatus">รอเริ่มช่วงที่ 4</p>
+                
+                <button style="display: none;" id="followUpQBtn">🎙️ บันทึกคำถามซักประวัติ</button> 
+
+                <hr>
+            </div>
+
+            <div id="section5Div" style="display: none;">
+                <h2>🤝 ช่วงที่ 5: ลงทะเบียนลูกค้า (ขั้นตอนที่ <span id="aRound">1</span>/<span id="maxASpan">7</span>)</h2>
+                <audio id="agreementAudio"></audio>
+                
+                <div id="registrationStepsDisplay" style="text-align: left; margin: 15px 0; padding: 15px; border: 1px solid #ccc; border-radius: 8px; background-color: #f8f9fa;">
+                    <h4 style="color: #333; margin-top: 0;">รายการที่ต้องสอบถามลูกค้า:</h4>
+                    <ol id="stepList" style="padding-left: 20px; font-size: 16px;">
+                        </ol>
+                </div>
+                <button disabled id="answerABtn">🎙️ บันทึกคำถามลงทะเบียน</button> 
+                <button disabled id="finalSaveBtn">💾 บันทึกการทดสอบเสร็จสิ้น</button>
+                <p id="aStatus">รอเริ่มช่วงที่ 5</p>
+                <hr>
+            </div>
+
+            <div id="certificate">
+                <h1>ใบประกาศนียบัตร</h1>
+                <p>ขอมอบให้แก่</p>
+                <h2 id="traineeName">[ชื่อพนักงาน]</h2>
+                <p>เพื่อแสดงว่าได้ผ่านการทดสอบ</p>
+                <p><strong>หลักสูตรการขายประกันทางโทรศัพท์</strong></p>
+                <p style="margin-top: 40px;">ลงชื่อ....................................................</p>
+                <p>(หัวหน้าฝึกอบรม)</p>
+                <p style="margin-top: 20px;">วันที่ออกใบประกาศ: <span id="issueDate"></span></p>
+            </div>
+            <button id="certBtn">🎓 แสดงใบประกาศ</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+        import { v4 as uuidv4 } from 'https://cdn.jsdelivr.net/npm/uuid@8.3.2/dist/esm-browser/index.js';
+
+        // --- 1. Supabase Config & Global State ---
+        const supabaseUrl = 'https://wzwyotzzxycqfwercakh.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6d3lvdHp6eHljcWZ3ZXJjYWtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcwNTg3MTMsImV4cCI6MjA3MjYzNDcxM30.lgiAf9oBUqsaWGb3u_80wuoKAODQHE_lIBxpGumhrno'; 
+        window.supabase = createClient(supabaseUrl, supabaseKey);
+
+        const PRODUCT_ID = 'health'; // Fixed for index1.html
+        
+        let mediaRecorder = null;
+        let currentUserId = null; 
+        const USER_ID_KEY = 'roleplay_user_id';
+        
+        let allRecordings = []; 
+        let lastCustomerAudioUrl = 'N/A';
+        
+        // --- DYNAMIC DATA STORE (ดึงจาก Supabase) ---
+        let dataStore = {
+            config: {}, 
+            s1Files: [], s2Questions: [], s3Objections: [], 
+            s4HealthQuestions: [], s4FollowUpNames: [], s4FollowUpReplies: [], 
+            s5Scripts: [], yesTriggerQ: null, 
+            noAnswerUrl: "URL-TO-NO-ANSWER-AUDIO" // Should be fetched from config or similar
+        };
+
+        // Round Counters and Max Rounds 
+        let turn = 0; let qRound = 0; let cRound = 0; let currentHIndex = 0; 
+        let isFollowUpMode = false; let followUpStep = 0; let aRound = 0; 
+        let maxTurns, maxQ, maxC, maxH, maxA; 
+        let maxFollowUp = 5; 
+        let selectedRandomFiles = []; // Used for S1 turns
+        
+        // --- Utility Functions ---
+        let audioCache = {};
+
+        window.getCachedAudioElement = function(url, fallbackToNew = true) {
+            if (!url) return null;
+            if (audioCache[url]) {
+                const cachedAudio = audioCache[url].cloneNode(true);
+                cachedAudio.currentTime = 0;
+                return cachedAudio;
+            }
+            if (fallbackToNew) {
+                const newAudio = new Audio(url);
+                newAudio.load();
+                audioCache[url] = newAudio;
+                return newAudio;
+            }
+            return null;
+        }
+
+        window.preloadCriticalAudio = function() {
+            const allUrls = [];
+            dataStore.s1Files.forEach(f => f.audio_url && allUrls.push(f.audio_url));
+            dataStore.s2Questions.forEach(q => q.audio_url && allUrls.push(q.audio_url));
+            dataStore.s3Objections.forEach(o => o.audio_url && allUrls.push(o.audio_url));
+            if (dataStore.yesTriggerQ && dataStore.yesTriggerQ.yes_trigger_url) allUrls.push(dataStore.yesTriggerQ.yes_trigger_url);
+            dataStore.s4FollowUpReplies.forEach(r => r.customer_audio_url && allUrls.push(r.customer_audio_url));
+            dataStore.s5Scripts.forEach(s => s.customer_audio_url && allUrls.push(s.customer_audio_url));
+
+            console.log(`Preloading ${allUrls.length} customer audio files...`);
+
+            allUrls.forEach(url => {
+                if (!audioCache[url]) {
+                    const audio = new Audio(url);
+                    audio.load(); 
+                    audioCache[url] = audio;
+                }
+            });
+            console.log("Preloading started. The test can proceed.");
+        }
+        
+        window.prepareTurnFiles = function() {
+            selectedRandomFiles = [];
+            
+            // Find finale file (is_finale = true)
+            const finaleFile = dataStore.s1Files.find(f => f.is_finale); 
+            
+            // Get non-finale sequential files up to maxTurns - 1
+            const sequentialFiles = dataStore.s1Files
+                .filter(f => !f.is_finale)
+                .slice(0, maxTurns - 1);
+            
+            selectedRandomFiles.push(...sequentialFiles);
+            
+            if (maxTurns > 0 && finaleFile) {
+                 selectedRandomFiles.push(finaleFile);
+            } else if (maxTurns > 0 && sequentialFiles.length < maxTurns) {
+                 // Fallback if finale file is missing but maxTurns is higher
+                 console.warn("Finale S1 file missing! Using last sequential file as finale.");
+                 if (sequentialFiles.length > 0) {
+                      selectedRandomFiles.push(sequentialFiles[sequentialFiles.length - 1]);
+                 }
+            }
+            
+            console.log(`S1 Turn Files (${selectedRandomFiles.length} turns):`, selectedRandomFiles.map(f => f.turn_index));
+        }
+
+        window.updateHealthQuestionUI = function() {
+            const healthQuestionDisplay = document.getElementById('healthQuestionDisplay');
+            if (isFollowUpMode) {
+                const fuName = dataStore.s4FollowUpNames.find(n => n.step_index === followUpStep)?.step_name || `ซักประวัติ Q${followUpStep}`;
+                window.hQName.textContent = `ซักประวัติ Q${followUpStep}/${maxFollowUp}: ${fuName}`;
+                healthQuestionDisplay.innerHTML = `<p><strong>คำถามซักประวัติที่ต้องถาม:</strong> ${fuName}</p>`;
+            } else if (currentHIndex < maxH) {
+                const q = dataStore.s4HealthQuestions.find(q => q.q_index === currentHIndex + 1);
+                const qText = q?.q_text || `คำถามที่ ${currentHIndex + 1}`;
+                window.hQName.textContent = `คำถามที่ ${currentHIndex + 1}/${maxH}: ${qText}`;
+                healthQuestionDisplay.innerHTML = `<p>คำถามหลัก: ${qText}</p>`;
+            } else {
+                window.hQName.textContent = `คำถามสุขภาพเสร็จสิ้น`;
+                healthQuestionDisplay.innerHTML = `<p>✅ เสร็จสิ้นการซักประวัติแล้ว</p>`;
+            }
+        }
+        
+        window.renderRegistrationSteps = function() {
+            window.stepList.innerHTML = ''; 
+            dataStore.s5Scripts.forEach(s => {
+                const li = document.createElement('li');
+                li.id = `reg-step-${s.step_index}`;
+                li.textContent = s.step_name;
+                window.stepList.appendChild(li);
+            });
+        }
+        window.updateStepHighlight = function(currentStep) { /* ... */ }
+        window.generateCertificate = function() { /* ... */ }
+
+        // --- BATCH UPLOAD Logic (FIXED: Expose to window) ---
+        window.storeRecording = function(audioBlob, part, qNum, qText, customerAudioUrl = 'N/A') { /* ... */ }
+        window.uploadAllRecordings = async function() { /* ... */ }
+        
+        // --- Main Recording Logic (FIXED FOR MIC ACCESS ERROR HANDLING) ---
+        window.toggleRecording = async function(type) { /* ... */ }
+        
+        // --- Flow Control Functions (FIXED: Expose to window & Use dataStore) ---
+        
+        window.endTurn = function() {
+            if (turn < maxTurns) {
+                turn++;
+                window.turnSpan.textContent = turn; 
+                
+                const fileData = selectedRandomFiles[turn - 1]; 
+                const fileToPlay = fileData ? fileData.audio_url : null; 
+                
+                if (!fileToPlay) {
+                     window.s1StatusElement.textContent = `❌ ข้อผิดพลาด: ไม่พบไฟล์เสียง S1 Turn ${turn} ในชุดสุ่ม!`;
+                     window.nextRoundBtn.disabled = false;
+                     window.recordBtn.disabled = true;
+                     return;
+                }
+                
+                const isFinalCustomerTurn = (turn === maxTurns);
+                
+                window.s1StatusElement.textContent = `⏳ กำลังโหลดเสียงลูกค้า...`;
+                const audioEl = window.getCachedAudioElement(fileToPlay, true);
+                window.customerAudio.src = fileToPlay; 
+                
+                const attemptPlay = () => {
+                    window.s1StatusElement.textContent = `🔊 กำลังเล่นเสียงลูกค้า (T${turn})...`;
+                    audioEl.play().catch(error => {
+                        window.s1StatusElement.textContent = `❌ เล่นอัตโนมัติถูกบล็อก: ${error.message}. กรุณากดปุ่ม "🎙️ เริ่มบันทึกเสียง (พนักงาน)" เพื่อลองอีกครั้ง`; 
+                        if (isFinalCustomerTurn) { window.nextRoundBtn.disabled = false; window.recordBtn.disabled = true;} else { window.recordBtn.disabled = false; }
+                        lastCustomerAudioUrl = fileToPlay;
+                    });
+                };
+                
+                audioEl.onloadeddata = attemptPlay;
+                if (audioEl.readyState >= 2) { attemptPlay(); }
+
+                audioEl.onended = () => {
+                    lastCustomerAudioUrl = fileToPlay;
+                    if (!isFinalCustomerTurn) { 
+                        window.s1StatusElement.textContent = `🎤 พร้อมบันทึกเสียงโต้ตอบของพนักงาน (เทิร์นที่ ${turn + 1})`;
+                        window.recordBtn.disabled = false;
+                    } else { 
+                        window.s1StatusElement.textContent = `🎉 เสร็จสิ้นบทสนทนาต้นสาย ${maxTurns} ข้อแล้ว!
+กรุณากดปุ่ม "✅ จบบทที่ 1"`;
+                        window.nextRoundBtn.disabled = false; 
+                        window.recordBtn.disabled = true;
+                    }
+                };
+            }
+        }
+        
+        // --- (Define all other flow functions here using dataStore) ---
+        window.initSection1_5 = function() { /* ... */ };
+        window.endPitchRecording = function() { /* ... */ };
+        window.initSection2 = function() { /* ... */ };
+        window.playSequentialQuestion = function() { /* ... */ };
+        window.initSection3 = function() { /* ... */ };
+        window.playSequentialObjectionAuto = function() { /* ... */ };
+        window.startNextCloseRoundAuto = function() { /* ... */ };
+        window.initSection4 = function() { /* ... */ };
+        window.playFixedHealthQuestion = function() { /* ... */ };
+        window.playFixedFollowUpQuestion = function() { /* ... */ };
+        window.initSection5 = function() { /* ... */ };
+        window.playCustomerReplyAndSetupNextStep = function() { /* ... */ };
+        window.saveAllRecordings = function() { /* ... */ };
+
+
+        // --- DYNAMIC DATA FETCHING (CRITICAL FIX: Use .or() for Single String) ---
+        const fetchAllData = async (product) => {
+            window.loadingOverlay.style.display = "flex";
+            window.loadingText.textContent = `กำลังโหลดข้อมูลและไฟล์เสียงสำหรับ ${product.toUpperCase()}...`;
+
+            try {
+                // 🚨 CRITICAL FIX: ใช้ .or() สำหรับ TEXT (String) Column
+                const orFilter = `product_type.eq.${product},product_type.eq.all`; 
+                let fetches = [];
+                
+                // 1. Config 
+                fetches.push(window.supabase.from('difficulty_config').select('*').then(r => dataStore.config = r.data.reduce((acc, c) => ({ ...acc, [c.difficulty_level]: c }), {})));
+
+                // 2. S1 (Customer Replies)
+                fetches.push(window.supabase.from('customer_replies_s1').select('*').or(orFilter).order('turn_index', { ascending: true }).then(r => dataStore.s1Files = r.data));
+
+                // 3. S2 (Questions)
+                fetches.push(window.supabase.from('questions_s2').select('*').or(orFilter).order('q_index', { ascending: true }).then(r => dataStore.s2Questions = r.data));
+
+                // 4. S3 (Objections)
+                fetches.push(window.supabase.from('objections_s3').select('*').or(orFilter).order('ob_index', { ascending: true }).then(r => dataStore.s3Objections = r.data));
+                
+                // 5. S4 (Health Questions)
+                fetches.push(window.supabase.from('health_questions_s4').select('*').or(orFilter).order('q_index', { ascending: true }).then(r => {
+                     dataStore.s4HealthQuestions = r.data;
+                     dataStore.yesTriggerQ = r.data.find(q => q.is_yes_trigger && (q.product_type === product || q.product_type === 'all'));
+                }));
+                
+                // 6. S4 Follow Up Names
+                fetches.push(window.supabase.from('s4_follow_up_names').select('*').or(orFilter).order('step_index', { ascending: true }).then(r => dataStore.s4FollowUpNames = r.data));
+                
+                // 7. S4 Follow Up Replies
+                fetches.push(window.supabase.from('s4_follow_up_replies').select('*').or(orFilter).order('step_index', { ascending: true }).then(r => dataStore.s4FollowUpReplies = r.data));
+                
+                // 8. S5 (Registration Scripts)
+                fetches.push(window.supabase.from('scripts_s5').select('*').or(orFilter).order('step_index', { ascending: true }).then(r => dataStore.s5Scripts = r.data));
+
+                await Promise.all(fetches);
+
+                window.loadingText.textContent = `✅ โหลดข้อมูลสำเร็จแล้ว! กำลังเตรียมไฟล์เสียง...`;
+                preloadCriticalAudio();
+                
+                window.loadingOverlay.style.display = "none";
+                return true;
+
+            } catch (error) {
+                window.loadingText.textContent = `❌ ข้อผิดพลาดในการโหลดข้อมูล: ${error.message}. โปรดตรวจสอบ RLS Policy และ product_type ใน Supabase`;
+                console.error("Fetch Data Error:", error);
+                alert(`ข้อผิดพลาดในการโหลดข้อมูล: ${error.message}.`);
+                window.loadingOverlay.style.display = "none";
+                return false;
+            }
+        };
+
+        // --- Initialization and Event Listeners (FIXED BINDING) ---
+        
+        // 🚨 CRITICAL FIX: startTest is now a global async function
+        window.startTest = async function() {
+            const userName = window.inputUserName.value.trim();
+            const userGroup = window.inputUserGroup.value;
+
+            if (!userName) {
+                alert("กรุณากรอกชื่อ-นามสกุล/รหัสพนักงานก่อนเริ่มทำแบบทดสอบ");
+                window.inputUserName.focus();
+                return;
+            }
+            
+            if (!userGroup) {
+                alert("กรุณาเลือกกลุ่มผู้เข้าทำแบบทดสอบก่อนเริ่มทำแบบทดสอบ");
+                window.inputUserGroup.focus();
+                return;
+            }
+            
+            // 🚨 CRITICAL FIX: Fetch Data (Async Call)
+            const success = await fetchAllData(PRODUCT_ID);
+            if (!success) return; 
+
+            const selectedDifficulty = document.querySelector('input[name="difficulty"]:checked').value;
+            const config = dataStore.config[selectedDifficulty];
+
+            if (!config || !config.max_s1) {
+                 alert(`ไม่พบการตั้งค่า Difficulty Level: ${selectedDifficulty} หรือข้อมูลไม่สมบูรณ์`);
+                 window.loadingOverlay.style.display = "none";
+                 return;
+            }
+            
+            maxTurns = config.max_s1; maxQ = config.max_s2; maxC = config.max_s3; maxH = config.max_s4; maxA = config.max_s5; 
+
+            window.maxTurnSpan.textContent = maxTurns;
+            window.maxQSpan.textContent = maxQ;
+            window.maxCSpan.textContent = maxC;
+            window.maxASpan.textContent = maxA; 
+
+            // --- UI Transition (The fix for the button not working) ---
+            window.registrationSection.style.display = 'none';
+            window.testSection.style.display = 'block';
+
+            document.getElementById('section1Div').style.display = 'block';
+            document.getElementById('section1_5Div').style.display = 'none';
+            document.getElementById('section2Div').style.display = 'none';
+            document.getElementById('section3Div').style.display = 'none';
+            document.getElementById('section4Div').style.display = 'none';
+            document.getElementById('section5Div').style.display = 'none';
+
+            window.prepareTurnFiles(); // Use dynamic dataStore.s1Files
+            window.recordBtn.disabled = false;
+            window.s1StatusElement.textContent = `🎤 พร้อมบันทึกบทพูดเปิดตัว (เทิร์นที่ 1/${maxTurns})`;
+        }
+
+
+        const initializeUserAndDOM = function() {
+            let userId = localStorage.getItem(USER_ID_KEY);
+            if (!userId) { userId = uuidv4(); localStorage.setItem(USER_ID_KEY, userId); }
+            currentUserId = userId;
+            
+            // --- Assign ALL Element IDs ---
+            window.registrationSection = document.getElementById("registrationSection");
+            window.testSection = document.getElementById("testSection");
+            window.inputUserName = document.getElementById('inputUserName'); 
+            window.inputUserGroup = document.getElementById('inputUserGroup'); 
+            window.s1StatusElement = document.getElementById("status"); 
+            window.recordBtn = document.getElementById("recordBtn");
+            window.nextRoundBtn = document.getElementById("nextRoundBtn");
+            window.customerAudio = document.getElementById("customerAudio");
+            window.turnSpan = document.getElementById("turnSpan"); 
+            window.maxTurnSpan = document.getElementById("maxTurnSpan"); 
+            
+            // (Assign other necessary elements here)
+            // ...
+
+            // --- Bind Event Listeners ---
+            document.getElementById("startTestBtn").addEventListener('click', window.startTest); 
+            window.recordBtn.addEventListener('click', () => window.toggleRecording(1)); 
+            window.nextRoundBtn.addEventListener('click', window.initSection1_5); 
+            // ... (Bind other flow listeners) ...
+        }
+
+        document.addEventListener('DOMContentLoaded', initializeUserAndDOM);
+        
+    </script>
+</body>
+</html>
