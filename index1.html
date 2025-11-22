@@ -164,7 +164,7 @@
         window.supabase = createClient(supabaseUrl, supabaseKey);
 
         // 🚨 NEW: Product Identifier
-        const CURRENT_PRODUCT_ID = 'health'; // แก้ไขเป็นตัวพิมพ์เล็กตามข้อมูลในตาราง
+        const CURRENT_PRODUCT_ID = 'health'; // ตัวพิมพ์เล็กเพื่อตรงกับฐานข้อมูล
 
         // State Variables
         let mediaRecorder = null;
@@ -264,14 +264,14 @@
                 window.loadingText.textContent = `กำลังดึงข้อมูลคำถามสุขภาพ S4...`;
                 const { data: s4Data, error: s4Error } = await window.supabase
                     .from('health_questions_s4')
-                    // *** FIX: ลบ disease_name ออกแล้ว ***
+                    // *** แก้ไข: ลบ disease_name ออกแล้ว ***
                     .select('q_index, q_text, is_yes_trigger, yes_trigger_url') 
                     .eq('product_type', CURRENT_PRODUCT_ID) 
                     .order('q_index', { ascending: true });
                 if (s4Error) throw s4Error;
                 
                 globalS4Questions = s4Data.map(q => q.q_text);
-                // ตั้งค่า selectedDisease โดยใช้ CURRENT_PRODUCT_ID เป็นชื่อโรคชั่วคราว
+                // ตั้งค่า selectedDisease
                 selectedDisease = s4Data.find(q => q.is_yes_trigger) || {name: 'โรคสำคัญ', yes_trigger_url: NO_ANSWER_URL};
                 selectedDisease.name = CURRENT_PRODUCT_ID || 'โรคสำคัญ'; 
                 
@@ -315,7 +315,7 @@
                 
             } catch (error) {
                 console.error("Failed to fetch initial data:", error);
-                window.loadingText.textContent = `❌ ข้อผิดพลาดในการโหลดข้อมูล: ${error.message}. (โค้ด: 42703, RLS Policy? หรือ Column Error)`;
+                window.loadingText.textContent = `❌ ข้อผิดพลาดในการโหลดข้อมูล: ${error.message}. หากปัญหานี้ยังคงอยู่ กรุณาตรวจสอบ RLS Policy ในตาราง Supabase ทั้งหมด`;
                 window.startTestBtn.disabled = true;
                 setTimeout(() => { window.loadingOverlay.style.display = "none"; }, 3000);
                 return false;
