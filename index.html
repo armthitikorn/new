@@ -5,10 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>หน้าลงทะเบียนและเลือกแบบทดสอบ</title>
     <style>
-        /* [สไตล์เดิม] */
         @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap');
         body {
-            font-family: 'Sarabun', sans-serif; /* เปลี่ยนเป็น Sarabun เพื่อความสม่ำเสมอ */
+            font-family: 'Sarabun', sans-serif;
             margin: 0;
             padding: 40px;
             background-color: #f0f4f8;
@@ -49,7 +48,7 @@
             font-size: 16px;
         }
         select {
-            appearance: none; 
+            appearance: none;
             background-color: #f9f9f9;
         }
         button {
@@ -66,7 +65,7 @@
             margin-top: 10px;
         }
         #adminBtn {
-            background-color: #d9534f; /* สีแดงสำหรับ Admin */
+            background-color: #d9534f;
         }
         button:hover {
             background-color: #218838;
@@ -141,14 +140,15 @@
             department: department
         };
         localStorage.setItem('roleplayUserData', JSON.stringify(userData));
-        // บันทึก Product ID ที่ถูกต้อง
         localStorage.setItem('roleplaySelectedProduct', testType);
 
         // --- ตรรกะการนำทาง ---
         if (testType === 'health') {
-            window.location.href = 'index1.html'; // Health ใช้ index1.html
+            // Health (ใช้ index1.html)
+            window.location.href = 'index1.html'; 
         } else if (testType === 'life1' || testType === 'life2' || testType === 'retirement') {
-            window.location.href = 'index3.html'; // Life Group ใช้ index3.html
+            // Life Group (ใช้ index3.html)
+            window.location.href = 'index3.html'; 
         } else {
              alert('ไม่พบการตั้งค่าสำหรับแบบทดสอบที่เลือก');
         }
