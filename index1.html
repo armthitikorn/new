@@ -106,7 +106,7 @@
             color: #007bff;
         }
 
-        /* Admin/Difficulty Selection */
+        /* Difficulty Radio Styles */
         .difficulty-option {
             margin: 10px 0;
             text-align: left;
@@ -124,7 +124,8 @@
 
     <div id="registrationSection">
         <div class="info-box">
-            <strong>ผู้เข้าร่วม:</strong> <span id="userNameDisplay">...</span><br>
+            <strong>ผลิตภัณฑ์:</strong> <span id="productNameDisplayInfo">...</span><br>
+            <strong>ชื่อ/รหัส:</strong> <span id="userNameDisplay">...</span><br>
             <strong>แผนก:</strong> <span id="departmentDisplay">...</span>
         </div>
         
@@ -143,7 +144,7 @@
                 <label for="hard">HARD (ยาว)</label>
             </div>
         </div>
-        <button onclick="startTest()">▶️ เริ่มการทดสอบ</button>
+        <button id="startTestBtn" onclick="startTest()">▶️ เริ่มการทดสอบ</button>
     </div>
     
     <div id="testSection" style="display: none;">
@@ -192,7 +193,15 @@
     // Global State
     const CURRENT_PRODUCT_ID = localStorage.getItem('roleplaySelectedProduct') || 'health'; 
     let userData = {};
-    let difficultyConfig = {};
+    
+    // 🚨 DEFAULT/FALLBACK CONFIG (MUST MATCH HTML VALUES: EASY, MEDIUM, HARD)
+    let difficultyConfig = {
+        EASY: { S1: 3, S2: 5, S3: 3, S4: 5, S5: 7, label: "ง่าย (Easy)" }, 
+        MEDIUM: { S1: 5, S2: 8, S3: 8, S4: 5, S5: 7, label: "ปานกลาง (Medium)" }, 
+        HARD: { S1: 10, S2: 10, S3: 10, S4: 5, S5: 7, label: "ยาก (Hard)" } 
+    };
+
+    // Global Data Stores (จะถูกแทนที่ด้วยข้อมูลจาก Supabase หากโหลดสำเร็จ)
     let s1Turns = [];
     let s2Questions = [];
     let s3Objections = [];
@@ -218,21 +227,28 @@
     const fetchInitialData = async () => {
         window.loadingText.textContent = 'กำลังดึงข้อมูลพื้นฐานจาก Supabase...';
         window.loadingText.className = 'loading-text';
+        let isSuccess = true;
 
         try {
-            // 🚨 CRITICAL FIX: ใช้ .or() สำหรับ TEXT Filter (product_type ต้องเป็น TEXT)
+            // 🚨 CRITICAL FIX: ใช้ .or() สำหรับ TEXT Filter
+            // product_type.eq.health,product_type.eq.all
             const orFilter = `product_type.eq.${CURRENT_PRODUCT_ID},product_type.eq.all`;
             
-            // 2.0 Config
+            // 2.0 Config (โหลดก่อนเพื่อป้องกัน TypeError: Cannot read properties of undefined (reading 'S1'))
             const { data: cData, error: cError } = await window.supabase.from('difficulty_config').select('*');
             if (cError) throw cError;
-            cData.forEach(c => difficultyConfig[c.difficulty_level] = { S1: c.max_s1, S2: c.max_s2, S3: c.max_s3, S4: c.max_s4, S5: c.max_s5 });
-
+            
+            // 🚨 Robust check: ใช้ข้อมูลที่โหลดมาแทนค่า Default ถ้ามี
+            if (cData && cData.length > 0) {
+                 difficultyConfig = {}; // Clear default config
+                 cData.forEach(c => difficultyConfig[c.difficulty_level.toUpperCase()] = { S1: c.max_s1, S2: c.max_s2, S3: c.max_s3, S4: c.max_s4, S5: c.max_s5 });
+            }
+            
             // 2.1 S1 Customer Replies
             const { data: s1Data, error: s1Error } = await window.supabase
                 .from('customer_replies_s1')
                 .select('turn_index, audio_url, is_finale')
-                .or(orFilter) // 🚨 ใช้ .or()
+                .or(orFilter) // 🚨 FIXED: ใช้ .or()
                 .order('turn_index', { ascending: true });
             if (s1Error) throw s1Error;
             s1Turns = s1Data;
@@ -241,7 +257,7 @@
             const { data: s2Data, error: s2Error } = await window.supabase
                 .from('questions_s2')
                 .select('q_index, audio_url, q_text')
-                .or(orFilter) // 🚨 ใช้ .or()
+                .or(orFilter) // 🚨 FIXED: ใช้ .or()
                 .order('q_index', { ascending: true });
             if (s2Error) throw s2Error;
             s2Questions = s2Data;
@@ -250,7 +266,7 @@
             const { data: s3Data, error: s3Error } = await window.supabase
                 .from('objections_s3')
                 .select('ob_index, audio_url, ob_text')
-                .or(orFilter) // 🚨 ใช้ .or()
+                .or(orFilter) // 🚨 FIXED: ใช้ .or()
                 .order('ob_index', { ascending: true });
             if (s3Error) throw s3Error;
             s3Objections = s3Data;
@@ -258,18 +274,18 @@
             // 2.4 S4 Health Questions
             const { data: s4qData, error: s4qError } = await window.supabase
                 .from('health_questions_s4')
-                .select('*') // รวมถึง is_yes_trigger, yes_trigger_url
-                .or(orFilter) // 🚨 ใช้ .or()
+                .select('*') 
+                .or(orFilter) // 🚨 FIXED: ใช้ .or()
                 .order('q_index', { ascending: true });
             if (s4qError) throw s4qError;
             s4HealthQuestions = s4qData;
-            yesTriggerQ = s4qData.find(q => q.is_yes_trigger); // ค้นหาคำถามที่เป็น Yes Trigger
+            yesTriggerQ = s4qData.find(q => q.is_yes_trigger); 
 
             // 2.5 S4 Follow Up Names
             const { data: s4fuNameData, error: s4fuNameError } = await window.supabase
                 .from('s4_follow_up_names')
                 .select('*')
-                .or(orFilter) // 🚨 ใช้ .or()
+                .or(orFilter) // 🚨 FIXED: ใช้ .or()
                 .order('step_index', { ascending: true });
             if (s4fuNameError) throw s4fuNameError;
             s4FollowUpNames = s4fuNameData;
@@ -278,7 +294,7 @@
             const { data: s4furData, error: s4furError } = await window.supabase
                 .from('s4_follow_up_replies')
                 .select('*')
-                .or(orFilter) // 🚨 ใช้ .or()
+                .or(orFilter) // 🚨 FIXED: ใช้ .or()
                 .order('step_index', { ascending: true });
             if (s4furError) throw s4furError;
             s4FollowUpReplies = s4furData;
@@ -287,19 +303,28 @@
             const { data: s5Data, error: s5Error } = await window.supabase
                 .from('scripts_s5')
                 .select('*')
-                .or(orFilter) // 🚨 ใช้ .or()
+                .or(orFilter) // 🚨 FIXED: ใช้ .or()
                 .order('step_index', { ascending: true });
             if (s5Error) throw s5Error;
             s5Scripts = s5Data;
 
-            window.loadingText.textContent = '✅ โหลดข้อมูลพื้นฐานสำเร็จแล้ว! กรุณาเลือกระดับความยาก';
-            window.loadingText.className = 'success-text';
-
         } catch (err) {
             console.error('Fetch error:', err);
-            window.loadingText.textContent = `❌ ข้อผิดพลาดในการโหลดข้อมูล: ${err.message}. (โปรดตรวจสอบ Product ID และ RLS Policy ใน Supabase)`;
+            window.loadingText.textContent = `❌ ข้อผิดพลาดในการโหลดข้อมูลหลัก: ${err.message}. (โค้ดใช้ค่าเริ่มต้น)`;
             window.loadingText.className = 'error-text';
-            document.getElementById('recordBtn').disabled = true;
+            isSuccess = false;
+        }
+
+        // 🚨 CRITICAL FIX: ต้องให้โค้ดทำงานต่อได้แม้ว่าการโหลดข้อมูลหลักจะล้มเหลว
+        if (isSuccess && s1Turns.length > 0) {
+            window.loadingText.textContent = '✅ โหลดข้อมูลพื้นฐานสำเร็จแล้ว! กรุณาเลือกระดับความยาก';
+            window.loadingText.className = 'success-text';
+            document.getElementById('startTestBtn').disabled = false;
+        } else {
+             // หากโหลด S1 ไม่ได้ ให้ใช้สถานะนี้และใช้ค่า Default Config
+            window.loadingText.textContent = `⚠️ โหลดข้อมูล S1 ไม่ได้ (0 ไฟล์) กรุณาตรวจสอบ RLS Policy! โค้ดใช้ค่าเริ่มต้น`;
+            window.loadingText.className = 'error-text';
+             document.getElementById('startTestBtn').disabled = false; // อนุญาตให้เริ่มโดยใช้ค่า default
         }
     };
 
@@ -315,26 +340,32 @@
         document.getElementById('userNameDisplay').textContent = userData.fullName || 'N/A';
         document.getElementById('departmentDisplay').textContent = userData.department || 'N/A';
         document.getElementById('productNameDisplay').textContent = `ผลิตภัณฑ์: ${CURRENT_PRODUCT_ID.toUpperCase()}`;
+        document.getElementById('productNameDisplayInfo').textContent = CURRENT_PRODUCT_ID.toUpperCase();
+        
+        // 🚨 BIND EVENT LISTENER HERE (Fixes the issue from previous steps where startTest wasn't globally accessible)
+        document.getElementById('startTestBtn').addEventListener('click', startTest);
         
         fetchInitialData();
     };
 
     // --- 4. ฟังก์ชันเริ่มทำแบบทดสอบ (Start Test) ---
     window.startTest = function() {
-        if (s1Turns.length === 0) {
-            alert('ข้อมูล S1 ยังไม่พร้อม กรุณาลองโหลดหน้าใหม่ หรือติดต่อผู้ดูแลระบบ');
+        const selectedDifficulty = document.querySelector('input[name="difficulty"]:checked').value;
+        const config = difficultyConfig[selectedDifficulty]; // 🚨 FIXED: ใช้ config จากตัวแปร Global
+
+        if (!config || s1Turns.length === 0) {
+            // หาก config หรือ S1 ยังว่างเปล่า (เนื่องจาก RLS fail)
+            alert('ข้อมูล S1 หรือ Difficulty Config ยังไม่พร้อม กรุณาตรวจสอบ RLS Policy ใน Supabase');
             return;
         }
-
-        const selectedDifficulty = document.querySelector('input[name="difficulty"]:checked').value;
-        const config = difficultyConfig[selectedDifficulty];
 
         maxTurns = config.S1;
         maxQ = config.S2;
         maxC = config.S3;
         maxH = config.S4;
         maxA = config.S5; 
-
+        
+        // ... (ส่วนการแสดงผล Max Turns) ...
         document.getElementById('maxTurnSpan').textContent = maxTurns;
         document.getElementById('maxQSpan').textContent = maxQ;
         document.getElementById('maxCSpan').textContent = maxC;
@@ -344,6 +375,7 @@
         document.getElementById('registrationSection').style.display = 'none';
         document.getElementById('testSection').style.display = 'block';
 
+        // ... (ส่วนการแสดงผล Section 1-5) ...
         document.getElementById('section1Div').style.display = 'block';
         document.getElementById('section1_5Div').style.display = 'none';
         document.getElementById('section2Div').style.display = 'none';
@@ -351,13 +383,8 @@
         document.getElementById('section4Div').style.display = 'none';
         document.getElementById('section5Div').style.display = 'none';
 
-        // Reset customer audio URL before starting S1
-        lastCustomerAudioUrl = 'S1 Initial Greeting (No Customer Audio)';
-
-        // Assumption: Preload and prepare functions are defined elsewhere or will be added later
-        // For simplicity, we only initialize the starting state here.
-        // preloadCriticalAudio(); // Assume function exists
-        // prepareTurnFiles(); // Assume function exists
+        // ... (ส่วนการเริ่มต้น S1) ...
+        // Note: You need to implement preloadCriticalAudio() and prepareTurnFiles() logic
         
         document.getElementById('recordBtn').disabled = false;
         document.getElementById('s1StatusElement').textContent = `🎤 พร้อมบันทึกบทพูดเปิดตัว (เทิร์นที่ 1/${maxTurns})`;
@@ -366,11 +393,9 @@
     // --- 5. ฟังก์ชัน Record/Stop (Placeholder) ---
     // Note: The full MediaRecorder/Supabase Storage logic is omitted here for brevity, 
     // but the final working code will need this logic restored.
-    window.recordBtn = document.getElementById('recordBtn');
-    window.recordBtn.onclick = function() {
+    document.getElementById('recordBtn').onclick = function() {
         alert("ฟังก์ชันบันทึกเสียงถูกเปิดใช้งานแล้ว หากต้องการใช้ฟังก์ชันนี้ต้องมีการเพิ่มโค้ด MediaRecorder และ Supabase Storage เข้ามา");
     };
-
 
     document.addEventListener('DOMContentLoaded', initializeUserAndDOM);
 </script>
