@@ -1,209 +1,96 @@
-<!DOCTYPE html>
-<html lang="th">
-<head>
-    <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
-    <title>E-Simulator Roleplay (Saving 1)</title>
-    
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;700&display=swap');
-        body { font-family: 'Sarabun', sans-serif; padding: 20px; text-align: center; background-color: #f4f7f6; }
-        .container-box { max-width: 700px; margin: 0 auto; padding: 20px; background: white; border-radius: 12px; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08); }
-        h1 { font-size: 32px; color: #d9534f; margin-bottom: 20px; }
-        h2 { margin-top: 25px; font-size: 24px; color: #337ab7; border-bottom: 2px solid #eee; padding-bottom: 10px; }
-        button { margin: 10px 5px; padding: 12px 24px; font-size: 18px; cursor: pointer; border-radius: 8px; border: none; transition: background-color 0.3s; }
-        .status-text { margin-top: 15px; font-weight: bold; font-size: 1.1em; }
-        .success-text { color: green; }
-        .error-text { color: red; }
-        .audio-player { width: 100%; max-width: 400px; margin: 15px auto; }
-        .section-content { text-align: left; padding: 10px; border: 1px dashed #ccc; border-radius: 8px; margin-top: 15px; }
-        .hide { display: none; }
-    </style>
-</head>
-<body>
-    <div class="container-box">
-        <h1>E-Simulator Roleplay (Saving 1)</h1>
+<div id="testSection" style="display: none;">
+    <h2>สถานะการทดสอบ</h2>
+    <p>เทิร์นรวม: <span id="turnSpan">1</span>/<span id="maxTurnSpan">5</span> | Q: <span id="qRound">1</span>/<span id="maxQSpan">10</span> | C: <span id="cRound">1</span>/<span id="maxCSpan">5</span> | A: <span id="aRound">1</span>/<span id="maxASpan">7</span></p>
 
-        <div id="registrationSection">
-            <h2>ข้อมูลผู้ใช้</h2>
-            <div style="text-align: left; margin-bottom: 10px;">
-                <label for="inputUserName">ชื่อ-นามสกุล:</label>
-                <input type="text" id="inputUserName" readonly style="width:100%; padding: 8px;">
-            </div>
-            <div style="text-align: left; margin-bottom: 20px;">
-                <label for="inputUserGroup">หน่วยงาน/ทีม:</label>
-                <input type="text" id="inputUserGroup" readonly style="width:100%; padding: 8px;">
-            </div>
-
-            <h2>เลือกระดับความยาก</h2>
-            <div style="display: flex; justify-content: center; gap: 20px;">
-                <label><input type="radio" name="difficulty" value="EASY" checked> ง่าย</label>
-                <label><input type="radio" name="difficulty" value="MEDIUM"> ปานกลาง</label>
-                <label><input type="radio" name="difficulty" value="HARD"> ยาก</label>
-            </div>
-            <button id="startTestBtn" style="margin-top: 20px;">เริ่มบทบาทสมมติ</button>
-        </div>
-
-        <div id="testSection" class="hide">
-            <p>เทิร์นรวม: <span id="currentTurnSpan">0</span>/<span id="maxTurnSpan">0</span> | Q: <span id="currentQSpan">0</span>/<span id="maxQSpan">0</span> | C: <span id="currentCSpan">0</span>/<span id="maxCSpan">0</span> | A: <span id="currentASpan">0</span>/<span id="maxASpan">0</span></p>
-
-            <div id="section1Div" class="hide">
-                <h2>ส่วนที่ 1: บทพูดเปิดตัวและตอบรับลูกค้า</h2>
-                <p id="s1StatusElement" class="status-text"></p>
-                <audio id="s1AudioPlayer" class="audio-player" controls></audio>
-                <button id="recordBtn">🎤 เริ่มบันทึก/หยุดบันทึก (เทิร์นที่ <span id="currentS1Turn">1</span>)</button>
-                <div id="s1RecordingStatus" class="status-text error-text"></div>
-            </div>
-
-            <div id="section1_5Div" class="hide">
-                <h2>ส่วนที่ 1.5: ลูกค้าโต้ตอบ</h2>
-                <p>ลูกค้าพูดจบแล้ว กรุณากดปุ่มเพื่อเริ่มบันทึกบทพูดตอบรับ</p>
-                <button id="nextSection2Btn" disabled>▶️ ตอบรับลูกค้า</button>
-            </div>
-            
-            <div id="section2Div" class="hide">
-                <h2>ส่วนที่ 2: คำถาม/คำตอบเบื้องต้น</h2>
-                <p id="s2QuestionElement" class="section-content">คำถามลูกค้า:</p>
-                <p id="s2StatusElement" class="status-text"></p>
-                <audio id="s2AudioPlayer" class="audio-player" controls></audio>
-                <button id="answerQBtn">🎤 เริ่มบันทึก/หยุดบันทึก</button>
-                <div id="s2RecordingStatus" class="status-text error-text"></div>
-            </div>
-
-            <div id="section3Div" class="hide">
-                <h2>ส่วนที่ 3: ตอบข้อโต้แย้งลูกค้า</h2>
-                <p id="s3ObjectionElement" class="section-content">ข้อโต้แย้ง:</p>
-                <p id="s3StatusElement" class="status-text"></p>
-                <audio id="s3AudioPlayer" class="audio-player" controls></audio>
-                <button id="answerCBtn">🎤 เริ่มบันทึก/หยุดบันทึก</button>
-                <div id="s3RecordingStatus" class="status-text error-text"></div>
-            </div>
-
-            <div id="section5Div" class="hide">
-                <h2>ส่วนที่ 5: การสรุปและนำเสนอ</h2>
-                <p id="s5ScriptElement" class="section-content">สคริปต์:</p>
-                <p id="s5StatusElement" class="status-text"></p>
-                <audio id="s5AudioPlayer" class="audio-player" controls></audio>
-                <button id="answerABtn">🎤 เริ่มบันทึก/หยุดบันทึก</button>
-                <div id="s5RecordingStatus" class="status-text error-text"></div>
-            </div>
-
-            <div id="finalSection" class="hide" style="margin-top: 30px;">
-                <h2>สิ้นสุดบทบาทสมมติ</h2>
-                <p>กรุณาบันทึกการบันทึกทั้งหมด</p>
-                <button id="finalSaveBtn" style="background-color: #28a745;">💾 บันทึกทั้งหมด</button>
-                <p id="saveStatus" class="status-text"></p>
-                <button id="certBtn" class="hide" style="background-color: #ffc107;">🏆 รับใบรับรองผล</button>
-            </div>
-            
-            <div id="certificate" class="hide" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; display: flex; justify-content: center; align-items: center;">
-                <div style="background: white; padding: 40px; border-radius: 10px; max-width: 80%; text-align: center;">
-                    <h3>ใบรับรองผล</h3>
-                    <p>แสดงผลลัพธ์การทดสอบ</p>
-                    <button onclick="document.getElementById('certificate').style.display='none'">ปิด</button>
-                </div>
-            </div>
-
-        </div>
     </div>
 
+<script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+    import { v4 as uuidv4 } from 'https://cdn.jsdelivr.net/npm/uuid@8.3.2/dist/esm-browser/index.js';
 
-    <script type="module">
-        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+    // --- 1. Supabase Config & Global State ---
+    const supabaseUrl = 'https://wzwyotzzxycqfwercakh.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6d3lvdHp6eHljcWZ3ZXJjYWtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcwNTg3MTMsImV4cCI6MjA3MjYzNDcxM30.lgiAf9oBUqsaWGb3u_80wuoKAODQHE_lIBxpGumhrno'; 
+    window.supabase = createClient(supabaseUrl, supabaseKey);
 
-        // ⚠️ Config: Supabase Key ที่คุณให้มา
-        const supabaseUrl = 'https://wzwyotzzxycqfwercakh.supabase.co';
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6d3lvdHp6eHljcWZ3ZXJjYWtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcwNTg3MTMsImV4cCI6MjA3MjYzNDcxM30.lgiAf9oBUqsaWGb3u_80wuoKAODQHE_lIBxpGumhrno';
-        window.supabase = createClient(supabaseUrl, supabaseKey);
+    // --- Multi-Product Configuration (NEW) ---
+    const DEFAULT_PRODUCT_TAG = 'saving1'; // <--- Product Tag: saving1
+    const CURRENT_PRODUCT_TAG = localStorage.getItem('roleplaySelectedProductTag') || DEFAULT_PRODUCT_TAG;
+    const FILTER_TAGS = [CURRENT_PRODUCT_TAG]; // แยก Product โดยเด็ดขาด
 
-        // --- Multi-Product Configuration (NEW) ---
-        const DEFAULT_PRODUCT_TAG = 'saving1'; // <--- Product Tag: saving1
-        const CURRENT_PRODUCT_TAG = localStorage.getItem('roleplaySelectedProductTag') || DEFAULT_PRODUCT_TAG;
-        const FILTER_TAGS = [CURRENT_PRODUCT_TAG]; // แยก Product โดยเด็ดขาด
+    // Variables: ลบตัวแปร S4 ออก
+    let mediaRecorder = null; let currentUserId = null; let allRecordings = []; let lastCustomerAudioUrl = 'N/A';
+    let turn=0, qRound=0, cRound=0, aRound=0; // ลบ currentHIndex, isFollowUpMode, followUpStep, selectedDisease
+    let maxTurns, maxQ, maxC, maxA; // ลบ maxH, maxFollowUp
+    let globalConfig={}, globalS1Files=[], globalS2Files=[], globalS3Files=[], globalS5Steps=[]; // ลบ globalS4...
+    let audioCache={}, selectedRandomFiles=[], selectedS2Files = [], selectedS3Files = [];
+    const NO_ANSWER_URL = "..."; 
 
-        const NO_ANSWER_URL = "..."; 
-        let productDisplayName = '';
+    // --- Core Functions: fetchInitialData (ปรับปรุงการกรองและลบ S4) ---
+    const fetchInitialData = async function() {
+        window.loadingOverlay.style.display = "flex";
+        try {
+            // 1. ดึง Difficulty Config - ลบ S4 ออก
+            const { data: cData, error: cError } = await window.supabase
+                .from('difficulty_config')
+                .select('*');
+            if (cError) throw cError;
+            cData.forEach(c => globalConfig[c.difficulty_level] = { S1: c.max_s1, S2: c.max_s2, S3: c.max_s3, S5: c.max_s5 });
 
-        // Variables: ลบตัวแปร S4 ออก
-        let allRecordings = [], mediaRecorder = null, currentUserId = null;
-        let turn=0, qRound=0, cRound=0, aRound=0;
-        let maxTurns, maxQ, maxC, maxA;
-        let globalConfig={}, globalS1Files=[], globalS2Files=[], globalS3Files=[], globalS5Steps=[]; // ไม่มี S4
-        let audioCache={}, selectedRandomFiles=[], lastCustomerAudioUrl='N/A';
-        let selectedS2Files = [], selectedS3Files = [];
-        
-        // --- Core Functions: fetchInitialData (ปรับปรุงการกรองและลบ S4 ออก) ---
-
-        const fetchInitialData = async function() {
-            try {
-                // 1. ดึง Difficulty Config - ไม่มี S4
-                const { data: cData, error: cError } = await window.supabase
-                    .from('difficulty_config')
-                    .select('*');
-                if (cError) throw cError;
-                cData.forEach(c => globalConfig[c.difficulty_level] = { S1: c.max_s1, S2: c.max_s2, S3: c.max_s3, S5: c.max_s5 });
-
-                // 2. ดึง S1 (customer_replies_s1)
-                const { data: s1Data, error: s1Error } = await window.supabase
-                    .from('customer_replies_s1')
-                    .select('turn_index, audio_url, is_finale')
-                    .overlaps('product_type', FILTER_TAGS) 
-                    .order('turn_index', { ascending: true });
-                if (s1Error) throw s1Error;
-                globalS1Files = s1Data;
-
-                // 3. ดึง S2 (questions_s2)
-                const { data: s2Data, error: s2Error } = await window.supabase
-                    .from('questions_s2')
-                    .select('q_index, audio_url')
-                    .overlaps('product_type', FILTER_TAGS) 
-                    .order('q_index', { ascending: true });
-                if (s2Error) throw s2Error;
-                globalS2Files = s2Data;
-
-                // 4. ดึง S3 (objections_s3)
-                const { data: s3Data, error: s3Error } = await window.supabase
-                    .from('objections_s3')
-                    .select('c_index, audio_url')
-                    .overlaps('product_type', FILTER_TAGS) 
-                    .order('c_index', { ascending: true });
-                if (s3Error) throw s3Error;
-                globalS3Files = s3Data;
-                
-                // 5. ดึง S5 (scripts_s5)
-                const { data: s5Data, error: s5Error } = await window.supabase
-                    .from('scripts_s5')
-                    .select('a_index, audio_url')
-                    .overlaps('product_type', FILTER_TAGS) 
-                    .order('a_index', { ascending: true });
-                if (s5Error) throw s5Error;
-                globalS5Steps = s5Data;
-
-                return true;
-            } catch (error) {
-                console.error("Error fetching data:", error);
-                alert("ไม่สามารถดึงข้อมูลเริ่มต้นได้: " + error.message);
-                return false;
-            }
-        };
-
-        const initializeUserAndDOM = async function() {
-            // ... (โค้ดส่วนอื่น ๆ ที่คุณมีอยู่) ...
-
-            // ตั้งค่าชื่อ Product บน UI (NEW)
-            productDisplayName = (CURRENT_PRODUCT_TAG === 'health') ? 'ประกันสุขภาพ' :
-                                (CURRENT_PRODUCT_TAG === 'saving1') ? 'ประกันสะสมทรัพย์ 1' :
-                                (CURRENT_PRODUCT_TAG === 'saving2') ? 'ประกันสะสมทรัพย์ 2' :
-                                (CURRENT_PRODUCT_TAG === 'retirement') ? 'ประกันเกษียณ' : 'Simulator';
-                                
-            document.querySelector('h1').textContent = `E-Simulator Roleplay (${productDisplayName})`;
+            // 2. ดึง S1 (customer_replies_s1)
+            const { data: s1Data, error: s1Error } = await window.supabase.from('customer_replies_s1').select('*').overlaps('product_type', FILTER_TAGS).order('turn_index');
+            if (s1Error) throw s1Error; globalS1Files = s1Data;
             
-            // ... (กรุณาคงฟังก์ชันอื่นๆ ที่เหลือทั้งหมดในโค้ดเดิมของคุณไว้) ...
-        };
+            // 3. ดึง S2 (questions_s2)
+            const { data: s2Data, error: s2Error } = await window.supabase.from('questions_s2').select('*').overlaps('product_type', FILTER_TAGS).order('q_index');
+            if (s2Error) throw s2Error; globalS2Files = s2Data;
 
-        document.addEventListener('DOMContentLoaded', initializeUserAndDOM);
+            // 4. ดึง S3 (objections_s3)
+            const { data: s3Data, error: s3Error } = await window.supabase.from('objections_s3').select('*').overlaps('product_type', FILTER_TAGS).order('ob_index');
+            if (s3Error) throw s3Error; globalS3Files = s3Data;
+            
+            // 5. ดึง S5 (scripts_s5)
+            const { data: s5Data, error: s5Error } = await window.supabase.from('scripts_s5').select('*').overlaps('product_type', FILTER_TAGS).order('step_index');
+            if (s5Error) throw s5Error; globalS5Steps = s5Data;
+
+            // ... (ละไว้: preloadCriticalAudio และส่วนอื่นๆ)
+            window.loadingOverlay.style.display = "none";
+            return true;
+        } catch (error) {
+            alert("โหลดข้อมูลไม่สำเร็จ: " + error.message);
+            window.loadingOverlay.style.display = "none";
+            return false;
+        }
+    };
+    
+    // --- Initialization and Event Listeners (แก้ไข Auto Fill) ---
+    const initializeUserAndDOM = async function() {
+        // ... (ส่วนการกำหนด ID และ DOM Element เดิม) ...
+        // ส่วนนี้ต้องคงโค้ดเดิมของคุณไว้ (binding buttons)
         
-        // ... (กรุณาคงฟังก์ชันหลักอื่นๆ ทั้งหมด: init, toggleRecording, prepareTurnFiles, nextTurn, initSection2, etc. ไว้ที่นี่) ...
-    </script>
-</body>
-</html>
+        // NEW LOGIC: ดึงข้อมูลชื่อ/กลุ่ม จาก Local Storage
+        const storedUserData = localStorage.getItem('roleplayUserData');
+
+        if (storedUserData) {
+            try {
+                const userData = JSON.parse(storedUserData);
+                window.inputUserName.value = userData.fullName || '';
+                window.inputUserGroup.value = userData.department || '';
+            } catch (e) {
+                console.error("Error parsing user data from localStorage:", e);
+            }
+        }
+        
+        // ... (ส่วน Event Listeners และ startTest เดิม) ...
+        
+        const dataLoaded = await fetchInitialData();
+        if (!dataLoaded) {
+            window.startTestBtn.disabled = true;
+            window.startTestBtn.textContent = "❌ ไม่สามารถโหลดข้อมูลได้";
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', initializeUserAndDOM);
+    
+    // ... (กรุณาคงฟังก์ชันหลักอื่นๆ ทั้งหมด: init, toggleRecording, prepareTurnFiles, nextTurn, initSection2, etc. ไว้ที่นี่) ...
+</script>
