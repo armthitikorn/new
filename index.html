@@ -1,13 +1,12 @@
-<!DOCTYPE html>
+<!DOCTYPE html><!DOCTYPE html>
 <html lang="th">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>หน้าลงทะเบียนและเลือกแบบทดสอบ</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap');
         body {
-            font-family: 'Sarabun', sans-serif;
+            font-family: 'Tahoma', sans-serif;
             margin: 0;
             padding: 40px;
             background-color: #f0f4f8;
@@ -48,7 +47,7 @@
             font-size: 16px;
         }
         select {
-            appearance: none;
+            appearance: none; /* ลบสไตล์ Dropdown ดั้งเดิมในบางเบราว์เซอร์ */
             background-color: #f9f9f9;
         }
         button {
@@ -62,16 +61,9 @@
             cursor: pointer;
             transition: background-color 0.3s;
             font-weight: bold;
-            margin-top: 10px;
-        }
-        #adminBtn {
-            background-color: #d9534f;
         }
         button:hover {
             background-color: #218838;
-        }
-        #adminBtn:hover {
-            background-color: #c9302c;
         }
     </style>
 </head>
@@ -101,26 +93,19 @@
             <label for="testType">เลือกประเภทแบบทดสอบ:</label>
             <select id="testType" required>
                 <option value="">-- กรุณาเลือก --</option>
-                <option value="health">Health (ประกันสุขภาพ)</option>
-                <option value="life1">Saving (ประกันชีวิต 1)</option> 
-                <option value="life2">Retire (ประกันชีวิต 2)</option>
-                <option value="retirement">Retirement (บำนาญ)</option> 
+                <option value="health">Health</option>
+                <option value="life1">Saving1</option>
+                <option value="life2">Saving2</option>
+                <option value="life3">Retire</option>
             </select>
         </div>
         
         <button id="startSelectionBtn">เริ่มทำแบบทดสอบ ▶️</button>
-
-        <hr style="margin-top: 20px; border-color: #eee;">
-        <button id="adminBtn">▶️ เข้าสู่ Admin Panel (สำหรับผู้ดูแล)</button>
         
     </div>
 </div>
 
 <script>
-    document.getElementById('adminBtn').addEventListener('click', function() {
-        window.location.href = 'admin.html';
-    });
-
     document.getElementById('startSelectionBtn').addEventListener('click', function() {
         const fullName = document.getElementById('fullName').value.trim();
         const employeeEmail = document.getElementById('employeeEmail').value.trim();
@@ -133,26 +118,33 @@
             return;
         }
         
-        // --- การจัดเก็บข้อมูล ---
+        // --- การจัดเก็บข้อมูล (Optional, แต่แนะนำ) ---
+        // เราสามารถจัดเก็บข้อมูลลง Local Storage เพื่อนำไปใช้ในหน้าถัดไปได้
         const userData = {
             fullName: fullName,
             email: employeeEmail,
             department: department
         };
         localStorage.setItem('roleplayUserData', JSON.stringify(userData));
-        localStorage.setItem('roleplaySelectedProduct', testType);
 
         // --- ตรรกะการนำทาง ---
-        if (testType === 'health') {
-            // Health (ใช้ index1.html)
-            window.location.href = 'index1.html'; 
-        } else if (testType === 'life1' || testType === 'life2' || testType === 'retirement') {
-            // Life Group (ใช้ index3.html)
-            window.location.href = 'index3.html'; 
-        } else {
-             alert('ไม่พบการตั้งค่าสำหรับแบบทดสอบที่เลือก');
-        }
+if (testType === 'health') {
+    // Health -> ไป index1.html
+    window.location.href = 'index1.html';
+} else if (testType === 'life1') {
+    // Saving1 -> ไป index3.html
+    window.location.href = 'index3.html';
+} else if (testType === 'life2') {
+    // Saving2 -> ไป index4.html
+    window.location.href = 'index4.html';
+} else if (testType === 'life3') {
+    // Retire -> ไป index5.html
+    window.location.href = 'index5.html';
+} else {
+    console.error('ประเภทการทดสอบไม่ถูกต้อง:', testType);
+}
     });
+
 </script>
 
 </body>
