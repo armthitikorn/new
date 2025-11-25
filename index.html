@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html><!DOCTYPE html>
 <html lang="th">
 <head>
     <meta charset="UTF-8">
@@ -42,95 +42,110 @@
             width: 100%;
             padding: 12px;
             border: 1px solid #ccc;
-            border-radius: 6px;
+            border-radius: 8px;
             box-sizing: border-box;
             font-size: 16px;
+        }
+        select {
+            appearance: none; /* ลบสไตล์ Dropdown ดั้งเดิมในบางเบราว์เซอร์ */
+            background-color: #f9f9f9;
         }
         button {
             width: 100%;
             padding: 15px;
-            background-color: #007bff;
+            background-color: #28a745;
             color: white;
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
             font-size: 18px;
             cursor: pointer;
             transition: background-color 0.3s;
+            font-weight: bold;
         }
         button:hover {
-            background-color: #0056b3;
+            background-color: #218838;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>ลงทะเบียนเข้าสู่บทบาทสมมติ</h1>
+
+<div class="container">
+    <h1>ระบบลงทะเบียนและเลือกแบบทดสอบ 📝</h1>
+    
+    <div id="registrationForm">
+        
         <div class="form-group">
             <label for="fullName">ชื่อ-นามสกุล:</label>
-            <input type="text" id="fullName" required>
+            <input type="text" id="fullName" placeholder="กรอกชื่อ-นามสกุล" required>
         </div>
+        
         <div class="form-group">
-            <label for="employeeEmail">อีเมลพนักงาน:</label>
-            <input type="email" id="employeeEmail" required>
+            <label for="employeeEmail">อีเมล:</label>
+            <input type="email" id="employeeEmail" placeholder="กรอกอีเมล" required>
         </div>
+        
         <div class="form-group">
-            <label for="department">หน่วยงาน/ทีม:</label>
-            <input type="text" id="department" required>
+            <label for="department">กลุ่มผู้เข้าฝึกอบรม:</label>
+            <input type="text" id="department" placeholder="กรอกชื่อแผนก" required>
         </div>
+
         <div class="form-group">
             <label for="testType">เลือกประเภทแบบทดสอบ:</label>
             <select id="testType" required>
-                <option value="" disabled selected>--- เลือก Product ---</option>
-                <option value="health">Health (ประกันสุขภาพ)</option>
-                <option value="life1">Life 1 (Saving 1)</option>
-                <option value="life2">Life 2 (Saving 2)</option>
-                <option value="life3">Life 3 (Retirement)</option>
+                <option value="">-- กรุณาเลือก --</option>
+                <option value="health">Health</option>
+                <option value="life1">Saving1</option>
+                <option value="life2">Saving2</option>
+                <option value="life3">Retire</option>
             </select>
         </div>
-        <button id="startSelectionBtn">เริ่มทำแบบทดสอบ</button>
+        
+        <button id="startSelectionBtn">เริ่มทำแบบทดสอบ ▶️</button>
+        
     </div>
+</div>
 
-    <script>
-        document.getElementById('startSelectionBtn').addEventListener('click', function() {
-            const fullName = document.getElementById('fullName').value.trim();
-            const employeeEmail = document.getElementById('employeeEmail').value.trim();
-            const department = document.getElementById('department').value.trim();
-            const testType = document.getElementById('testType').value;
+<script>
+    document.getElementById('startSelectionBtn').addEventListener('click', function() {
+        const fullName = document.getElementById('fullName').value.trim();
+        const employeeEmail = document.getElementById('employeeEmail').value.trim();
+        const department = document.getElementById('department').value.trim();
+        const testType = document.getElementById('testType').value;
 
-            if (!fullName || !employeeEmail || !department || testType === "") {
-                alert("กรุณากรอกข้อมูลให้ครบถ้วนก่อนเริ่มทำแบบทดสอบ!");
-                return;
-            }
-            
-            const userData = { fullName, email: employeeEmail, department };
-            localStorage.setItem('roleplayUserData', JSON.stringify(userData));
+        // ตรวจสอบความถูกต้องของข้อมูล (Validation)
+        if (!fullName || !employeeEmail || !department || testType === "") {
+            alert("กรุณากรอกข้อมูลให้ครบถ้วนก่อนเริ่มทำแบบทดสอบ!");
+            return;
+        }
+        
+        // --- การจัดเก็บข้อมูล (Optional, แต่แนะนำ) ---
+        // เราสามารถจัดเก็บข้อมูลลง Local Storage เพื่อนำไปใช้ในหน้าถัดไปได้
+        const userData = {
+            fullName: fullName,
+            email: employeeEmail,
+            department: department
+        };
+        localStorage.setItem('roleplayUserData', JSON.stringify(userData));
 
-            let productTag = ''; 
-            let nextPage = '';
+        // --- ตรรกะการนำทาง ---
+if (testType === 'health') {
+    // Health -> ไป index1.html
+    window.location.href = 'index1.html';
+} else if (testType === 'life1') {
+    // Saving1 -> ไป index3.html
+    window.location.href = 'index3.html';
+} else if (testType === 'life2') {
+    // Saving2 -> ไป index4.html
+    window.location.href = 'index4.html';
+} else if (testType === 'life3') {
+    // Retire -> ไป index5.html
+    window.location.href = 'index5.html';
+} else {
+    console.error('ประเภทการทดสอบไม่ถูกต้อง:', testType);
+}
+    });
 
-            // --- ตรรกะการกำหนด Product Tag และหน้าถัดไป ---
-            if (testType === 'health') {
-                productTag = 'health';
-                nextPage = 'index1.html';
-            } else if (testType === 'life1') {
-                productTag = 'saving1';
-                nextPage = 'index3.html';
-            } else if (testType === 'life2') {
-                productTag = 'saving2';
-                nextPage = 'index4.html';
-            } else if (testType === 'life3') {
-                productTag = 'retirement';
-                nextPage = 'index5.html';
-            } else {
-                console.error('ประเภทการทดสอบไม่ถูกต้อง:', testType);
-                return;
-            }
-            
-            // **บันทึก Product Tag ที่เลือกไว้**
-            localStorage.setItem('roleplaySelectedProductTag', productTag);
-            
-            window.location.href = nextPage;
-        });
-    </script>
+</script>
+
 </body>
 </html>
