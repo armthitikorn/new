@@ -1,151 +1,95 @@
-<!DOCTYPE html><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>หน้าลงทะเบียนและเลือกแบบทดสอบ</title>
-    <style>
-        body {
-            font-family: 'Tahoma', sans-serif;
-            margin: 0;
-            padding: 40px;
-            background-color: #f0f4f8;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
-        .container {
-            width: 100%;
-            max-width: 500px;
-            background: #ffffff;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        }
-        h1 {
-            color: #007bff;
-            text-align: center;
-            margin-bottom: 30px;
-            font-size: 28px;
-        }
-        .form-group {
-            margin-bottom: 20px;
-        }
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
-            color: #333;
-        }
-        input[type="text"], input[type="email"], select {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            box-sizing: border-box;
-            font-size: 16px;
-        }
-        select {
-            appearance: none; /* ลบสไตล์ Dropdown ดั้งเดิมในบางเบราว์เซอร์ */
-            background-color: #f9f9f9;
-        }
-        button {
-            width: 100%;
-            padding: 15px;
-            background-color: #28a745;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 18px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-            font-weight: bold;
-        }
-        button:hover {
-            background-color: #218838;
-        }
-    </style>
+    <title>Data Migration Tool - Recovery Jan 9</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body>
-
-<div class="container">
-    <h1>ระบบลงทะเบียนและเลือกแบบทดสอบ 📝</h1>
-    
-    <div id="registrationForm">
+<body class="bg-dark text-white p-5">
+    <div class="container bg-white text-dark p-4 rounded-4 shadow">
+        <h2 class="fw-bold mb-4 text-primary">ระบบกู้คืนและเชื่อมโยงข้อมูล (Storage -> Database)</h2>
+        <p>สคริปต์นี้จะสแกนโฟลเดอร์พนักงานทุกคนใน Storage และนำลิงก์ไฟล์เสียงไปบันทึกลงตาราง <b>submissions</b> ให้โดยอัตโนมัติ</p>
         
-        <div class="form-group">
-            <label for="fullName">ชื่อ-นามสกุล:</label>
-            <input type="text" id="fullName" placeholder="กรอกชื่อ-นามสกุล" required>
+        <button id="startBtn" class="btn btn-danger btn-lg w-100 fw-bold shadow-sm mb-4">เริ่มการกู้คืนข้อมูล (Start Migration)</button>
+        
+        <div id="log" class="border p-3 rounded bg-light font-monospace" style="height: 400px; overflow-y: auto; font-size: 12px;">
+            ระบบพร้อมทำงาน... กรุณากดปุ่มเริ่ม
         </div>
-        
-        <div class="form-group">
-            <label for="employeeEmail">อีเมล:</label>
-            <input type="email" id="employeeEmail" placeholder="กรอกอีเมล" required>
-        </div>
-        
-        <div class="form-group">
-            <label for="department">กลุ่มผู้เข้าฝึกอบรม:</label>
-            <input type="text" id="department" placeholder="กรอกชื่อแผนก" required>
-        </div>
-
-        <div class="form-group">
-            <label for="testType">เลือกประเภทแบบทดสอบ:</label>
-            <select id="testType" required>
-                <option value="">-- กรุณาเลือก --</option>
-                <option value="health">Health</option>
-                <option value="life1">Saving1</option>
-                <option value="life2">Saving2</option>
-                <option value="life3">Retire</option>
-            </select>
-        </div>
-        
-        <button id="startSelectionBtn">เริ่มทำแบบทดสอบ ▶️</button>
-        
     </div>
-</div>
 
-<script>
-    document.getElementById('startSelectionBtn').addEventListener('click', function() {
-        const fullName = document.getElementById('fullName').value.trim();
-        const employeeEmail = document.getElementById('employeeEmail').value.trim();
-        const department = document.getElementById('department').value.trim();
-        const testType = document.getElementById('testType').value;
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
-        // ตรวจสอบความถูกต้องของข้อมูล (Validation)
-        if (!fullName || !employeeEmail || !department || testType === "") {
-            alert("กรุณากรอกข้อมูลให้ครบถ้วนก่อนเริ่มทำแบบทดสอบ!");
-            return;
-        }
-        
-        // --- การจัดเก็บข้อมูล (Optional, แต่แนะนำ) ---
-        // เราสามารถจัดเก็บข้อมูลลง Local Storage เพื่อนำไปใช้ในหน้าถัดไปได้
-        const userData = {
-            fullName: fullName,
-            email: employeeEmail,
-            department: department
+        const supabaseUrl = 'https://wzwyotzzxycqfwercakh.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6d3lvdHp6eHljcWZ3ZXJjYWtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcwNTg3MTMsImV4cCI6MjA3MjYzNDcxM30.lgiAf9oBUqsaWGb3u_80wuoKAODQHE_lIBxpGumhrno';
+        const supabase = createClient(supabaseUrl, supabaseKey);
+
+        const log = document.getElementById('log');
+        const printLog = (msg) => { log.innerHTML += `<div>${msg}</div>`; log.scrollTop = log.scrollHeight; };
+
+        document.getElementById('startBtn').onclick = async () => {
+            printLog("🚀 เริ่มการสแกน Storage...");
+            
+            // 1. ดึง ID พนักงานทั้งหมดจาก Storage
+            const { data: folders, error } = await supabase.storage.from('responses').list('');
+            if (error) return printLog(`❌ Error: ${error.message}`);
+
+            for (const folder of folders) {
+                if (folder.name === '.emptyFolderPlaceholder') continue;
+                
+                const empId = folder.name;
+                printLog(`-----------------------------------`);
+                printLog(`🔍 กำลังตรวจสอบพนักงาน ID: ${empId}`);
+
+                const steps = ['S1', 'S1.5', 'S2', 'S3', 'S4', 'S5'];
+                let updatePayload = {};
+                let foundAny = false;
+
+                // 2. มุดหาไฟล์ในแต่ละ Step
+                for (const step of steps) {
+                    const { data: files } = await supabase.storage.from('responses').list(`${empId}/${step}`);
+                    
+                    if (files && files.length > 0) {
+                        const audioFile = files.find(f => !f.name.includes('.empty'));
+                        if (audioFile) {
+                            // สร้าง URL ตามรูปแบบที่คุณยืนยัน
+                            const publicUrl = `${supabaseUrl}/storage/v1/object/public/responses/${empId}/${step}/${audioFile.name}`;
+                            
+                            // เตรียมข้อมูลสำหรับ Update (ชื่อคอลัมน์ต้องตรงกับ SQL ที่เรา Run ไป)
+                            const colName = step.replace('.', '_').toLowerCase() + '_audio_url';
+                            updatePayload[`${colName}`] = publicUrl;
+                            foundAny = true;
+                            printLog(`✅ พบไฟล์ใน ${step}: ${audioFile.name}`);
+                        }
+                    }
+                }
+
+                if (foundAny) {
+                    // 3. ตรวจสอบว่ามีข้อมูลในตารางหรือยัง
+                    const { data: existing } = await supabase.from('submissions').select('id').eq('user_id', empId).single();
+
+                    if (existing) {
+                        // ถ้ามีแล้ว ให้ Update
+                        const { error: upError } = await supabase.from('submissions').update(updatePayload).eq('user_id', empId);
+                        if (!upError) printLog(`💾 อัปเดตข้อมูลลงตารางสำเร็จ!`);
+                    } else {
+                        // ถ้ายังไม่มี (เช่น เคสวันที่ 9 ที่ตารางว่าง) ให้ Insert ใหม่เลย
+                        const { error: inError } = await supabase.from('submissions').insert({
+                            user_id: empId,
+                            name: `พนักงานกู้คืน (${empId.substring(0,5)})`,
+                            created_at: folder.created_at,
+                            ...updatePayload
+                        });
+                        if (!inError) printLog(`✨ สร้างข้อมูลพนักงานใหม่ลงตารางสำเร็จ (กู้คืนสำเร็จ)!`);
+                    }
+                } else {
+                    printLog(`⚠️ ไม่พบไฟล์เสียงในห้องย่อยใดๆ`);
+                }
+            }
+            printLog(`-----------------------------------`);
+            printLog(`🏁 เสร็จสิ้นกระบวนการกู้คืนข้อมูล!`);
+            alert("กู้คืนข้อมูลสำเร็จแล้ว! กรุณากลับไปเช็คที่หน้า Dashboard");
         };
-        localStorage.setItem('roleplayUserData', JSON.stringify(userData));
-
-        // --- ตรรกะการนำทาง ---
-if (testType === 'health') {
-    // Health -> ไป index1.html
-    window.location.href = 'index1.html';
-} else if (testType === 'life1') {
-    // Saving1 -> ไป index3.html
-    window.location.href = 'index3.html';
-} else if (testType === 'life2') {
-    // Saving2 -> ไป index4.html
-    window.location.href = 'index4.html';
-} else if (testType === 'life3') {
-    // Retire -> ไป index5.html
-    window.location.href = 'index5.html';
-} else {
-    console.error('ประเภทการทดสอบไม่ถูกต้อง:', testType);
-}
-    });
-
-</script>
-
+    </script>
 </body>
 </html>
