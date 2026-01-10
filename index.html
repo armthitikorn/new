@@ -2,94 +2,189 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <title>Data Migration Tool - Recovery Jan 9</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Explorer (ID & Date Filter)</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;700&display=swap');
+        body { font-family: 'Sarabun', sans-serif; background-color: #f0f2f5; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        h1 { color: #1a73e8; text-align: center; margin-bottom: 30px; }
+        
+        /* Filter Panel */
+        .filter-panel { 
+            background: #ffffff; padding: 20px; border-radius: 10px; 
+            margin-bottom: 20px; display: flex; align-items: flex-end; gap: 15px; flex-wrap: wrap;
+            border: 1px solid #dee2e6; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .filter-group { display: flex; flex-direction: column; gap: 5px; }
+        .filter-group label { font-size: 0.85em; font-weight: bold; color: #555; }
+        input { padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; outline: none; transition: 0.2s; }
+        input:focus { border-color: #1a73e8; box-shadow: 0 0 0 2px rgba(26,115,232,0.2); }
+        input[type="text"] { min-width: 250px; }
+        
+        .btn-search { background: #1a73e8; color: white; border: none; padding: 10px 25px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .btn-search:hover { background: #1557b0; transform: translateY(-1px); }
+
+        /* Status & Table */
+        .status-box { padding: 12px; margin-bottom: 15px; border-radius: 8px; text-align: center; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9em; }
+        th { background-color: #f8f9fa; color: #5f6368; padding: 15px 12px; text-align: left; border-bottom: 2px solid #eee; }
+        td { padding: 12px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+        tr:hover { background-color: #fcfcfc; }
+        
+        audio { height: 32px; width: 220px; }
+        .date-text { color: #555; font-weight: 500; }
+        .badge { padding: 5px 10px; border-radius: 6px; font-family: monospace; font-size: 0.9em; }
+        .bg-user { background: #e9ecef; color: #495057; border: 1px solid #dee2e6; }
+        .bg-part { background: #e7f3ff; color: #007bff; font-weight: bold; }
+        .download-link { color: #1a73e8; text-decoration: none; font-weight: 600; }
+        .download-link:hover { text-decoration: underline; }
+    </style>
 </head>
-<body class="bg-dark text-white p-5">
-    <div class="container bg-white text-dark p-4 rounded-4 shadow">
-        <h2 class="fw-bold mb-4 text-primary">ระบบกู้คืนและเชื่อมโยงข้อมูล (Storage -> Database)</h2>
-        <p>สคริปต์นี้จะสแกนโฟลเดอร์พนักงานทุกคนใน Storage และนำลิงก์ไฟล์เสียงไปบันทึกลงตาราง <b>submissions</b> ให้โดยอัตโนมัติ</p>
-        
-        <button id="startBtn" class="btn btn-danger btn-lg w-100 fw-bold shadow-sm mb-4">เริ่มการกู้คืนข้อมูล (Start Migration)</button>
-        
-        <div id="log" class="border p-3 rounded bg-light font-monospace" style="height: 400px; overflow-y: auto; font-size: 12px;">
-            ระบบพร้อมทำงาน... กรุณากดปุ่มเริ่ม
+<body>
+
+<div class="container">
+    <h1>📂 Audio Storage Explorer</h1>
+
+    <div class="filter-panel">
+        <div class="filter-group">
+            <label>🔍 ค้นหาด้วย User ID:</label>
+            <input type="text" id="searchId" placeholder="วาง ID ที่นี่ (หรือบางส่วนของ ID)">
         </div>
+        <div class="filter-group">
+            <label>📅 เริ่มจากวันที่:</label>
+            <input type="date" id="startDate">
+        </div>
+        <div class="filter-group">
+            <label>📅 ถึงวันที่:</label>
+            <input type="date" id="endDate">
+        </div>
+        <button class="btn-search" onclick="scanStorage()">กรองข้อมูล</button>
     </div>
+    
+    <div id="status" class="status-box" style="background: #e8f0fe; color: #1967d2;">กรอกข้อมูลที่ต้องการค้นหาแล้วกดปุ่ม "กรองข้อมูล"</div>
 
-    <script type="module">
-        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+    <table id="fileTable">
+        <thead>
+            <tr>
+                <th width="180">วันที่อัปโหลด</th>
+                <th width="250">User ID</th>
+                <th width="100">Section</th>
+                <th>ชื่อไฟล์เสียง</th>
+                <th>เครื่องมือเล่นเสียง</th>
+                <th width="100">จัดการ</th>
+            </tr>
+        </thead>
+        <tbody id="fileList">
+            <tr><td colspan="6" style="text-align:center; padding: 50px; color: #999;">กรุณากดปุ่ม "กรองข้อมูล" เพื่อเริ่มดึงไฟล์จากระบบ</td></tr>
+        </tbody>
+    </table>
+</div>
 
-        const supabaseUrl = 'https://wzwyotzzxycqfwercakh.supabase.co';
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6d3lvdHp6eHljcWZ3ZXJjYWtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcwNTg3MTMsImV4cCI6MjA3MjYzNDcxM30.lgiAf9oBUqsaWGb3u_80wuoKAODQHE_lIBxpGumhrno';
-        const supabase = createClient(supabaseUrl, supabaseKey);
+<script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
-        const log = document.getElementById('log');
-        const printLog = (msg) => { log.innerHTML += `<div>${msg}</div>`; log.scrollTop = log.scrollHeight; };
+    // ค่าเชื่อมต่อ Supabase [จากไฟล์ index (5).html]
+    const supabaseUrl = 'https://wzwyotzzxycqfwercakh.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6d3lvdHp6eHljcWZ3ZXJjYWtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcwNTg3MTMsImV4cCI6MjA3MjYzNDcxM30.lgiAf9oBUqsaWGb3u_80wuoKAODQHE_lIBxpGumhrno'; 
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
-        document.getElementById('startBtn').onclick = async () => {
-            printLog("🚀 เริ่มการสแกน Storage...");
-            
-            // 1. ดึง ID พนักงานทั้งหมดจาก Storage
-            const { data: folders, error } = await supabase.storage.from('responses').list('');
-            if (error) return printLog(`❌ Error: ${error.message}`);
+    async function scanStorage() {
+        const statusEl = document.getElementById('status');
+        const listEl = document.getElementById('fileList');
+        
+        // รับค่าจากตัวกรอง
+        const searchId = document.getElementById('searchId').value.trim().toLowerCase();
+        const startVal = document.getElementById('startDate').value;
+        const endVal = document.getElementById('endDate').value;
+        
+        statusEl.style.background = '#fff3cd';
+        statusEl.style.color = '#856404';
+        statusEl.textContent = '⏳ กำลังสแกนหาไฟล์ตามเงื่อนไข...';
+        listEl.innerHTML = '';
 
-            for (const folder of folders) {
-                if (folder.name === '.emptyFolderPlaceholder') continue;
-                
-                const empId = folder.name;
-                printLog(`-----------------------------------`);
-                printLog(`🔍 กำลังตรวจสอบพนักงาน ID: ${empId}`);
+        try {
+            // 1. ดึงรายชื่อ User Folders ทั้งหมด
+            const { data: users, error: userError } = await supabase.storage.from('responses').list('');
+            if (userError) throw userError;
 
-                const steps = ['S1', 'S1.5', 'S2', 'S3', 'S4', 'S5'];
-                let updatePayload = {};
-                let foundAny = false;
+            let matchCount = 0;
 
-                // 2. มุดหาไฟล์ในแต่ละ Step
-                for (const step of steps) {
-                    const { data: files } = await supabase.storage.from('responses').list(`${empId}/${step}`);
-                    
-                    if (files && files.length > 0) {
-                        const audioFile = files.find(f => !f.name.includes('.empty'));
-                        if (audioFile) {
-                            // สร้าง URL ตามรูปแบบที่คุณยืนยัน
-                            const publicUrl = `${supabaseUrl}/storage/v1/object/public/responses/${empId}/${step}/${audioFile.name}`;
+            for (const user of users) {
+                if (user.name === '.emptyFolderPlaceholder') continue;
+
+                // --- กรองด้วย User ID ---
+                if (searchId && !user.name.toLowerCase().includes(searchId)) {
+                    continue; // ถ้ามีคำค้นหาแต่ไม่ตรง ให้ข้าม User นี้ไปเลย
+                }
+
+                // 2. ดึงรายชื่อ Section Folders (S1, S2...)
+                const { data: sections, error: sectionError } = await supabase.storage.from('responses').list(user.name);
+                if (sectionError) continue;
+
+                for (const section of sections) {
+                    const path = `${user.name}/${section.name}`;
+                    const { data: files, error: fileError } = await supabase.storage.from('responses').list(path);
+                    if (fileError) continue;
+
+                    for (const file of files) {
+                        if (file.name.endsWith('.webm')) {
                             
-                            // เตรียมข้อมูลสำหรับ Update (ชื่อคอลัมน์ต้องตรงกับ SQL ที่เรา Run ไป)
-                            const colName = step.replace('.', '_').toLowerCase() + '_audio_url';
-                            updatePayload[`${colName}`] = publicUrl;
-                            foundAny = true;
-                            printLog(`✅ พบไฟล์ใน ${step}: ${audioFile.name}`);
+                            // --- กรองด้วยวันที่ ---
+                            const fileDate = new Date(file.created_at);
+                            const fileDateOnly = fileDate.toISOString().split('T')[0];
+
+                            let isDateMatch = true;
+                            if (startVal && fileDateOnly < startVal) isDateMatch = false;
+                            if (endVal && fileDateOnly > endVal) isDateMatch = false;
+
+                            if (isDateMatch) {
+                                matchCount++;
+                                const { data: { publicUrl } } = supabase.storage.from('responses').getPublicUrl(`${path}/${file.name}`);
+                                
+                                const displayDate = fileDate.toLocaleString('th-TH', { 
+                                    year: 'numeric', month: 'short', day: 'numeric', 
+                                    hour: '2-digit', minute: '2-digit' 
+                                });
+
+                                appendRow(displayDate, user.name, section.name, file.name, publicUrl);
+                            }
                         }
                     }
                 }
-
-                if (foundAny) {
-                    // 3. ตรวจสอบว่ามีข้อมูลในตารางหรือยัง
-                    const { data: existing } = await supabase.from('submissions').select('id').eq('user_id', empId).single();
-
-                    if (existing) {
-                        // ถ้ามีแล้ว ให้ Update
-                        const { error: upError } = await supabase.from('submissions').update(updatePayload).eq('user_id', empId);
-                        if (!upError) printLog(`💾 อัปเดตข้อมูลลงตารางสำเร็จ!`);
-                    } else {
-                        // ถ้ายังไม่มี (เช่น เคสวันที่ 9 ที่ตารางว่าง) ให้ Insert ใหม่เลย
-                        const { error: inError } = await supabase.from('submissions').insert({
-                            user_id: empId,
-                            name: `พนักงานกู้คืน (${empId.substring(0,5)})`,
-                            created_at: folder.created_at,
-                            ...updatePayload
-                        });
-                        if (!inError) printLog(`✨ สร้างข้อมูลพนักงานใหม่ลงตารางสำเร็จ (กู้คืนสำเร็จ)!`);
-                    }
-                } else {
-                    printLog(`⚠️ ไม่พบไฟล์เสียงในห้องย่อยใดๆ`);
-                }
             }
-            printLog(`-----------------------------------`);
-            printLog(`🏁 เสร็จสิ้นกระบวนการกู้คืนข้อมูล!`);
-            alert("กู้คืนข้อมูลสำเร็จแล้ว! กรุณากลับไปเช็คที่หน้า Dashboard");
-        };
-    </script>
+
+            statusEl.style.background = '#d4edda';
+            statusEl.style.color = '#155724';
+            statusEl.textContent = `✅ ค้นหาเสร็จสิ้น พบไฟล์ที่ตรงเงื่อนไข ${matchCount} ไฟล์`;
+            
+            if(matchCount === 0) {
+                listEl.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:30px;">ไม่พบข้อมูลที่ตรงกับ User ID หรือวันที่ระบุ</td></tr>';
+            }
+
+        } catch (err) {
+            statusEl.style.background = '#f8d7da';
+            statusEl.style.color = '#721c24';
+            statusEl.textContent = '❌ เกิดข้อผิดพลาด: ' + err.message;
+        }
+    }
+
+    function appendRow(dateStr, userId, section, fileName, url) {
+        const listEl = document.getElementById('fileList');
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td class="date-text">${dateStr}</td>
+            <td><span class="badge bg-user">${userId}</span></td>
+            <td><span class="badge bg-part">${section}</span></td>
+            <td style="font-size: 0.8em; color: #888;">${fileName}</td>
+            <td><audio controls src="${url}"></audio></td>
+            <td><a href="${url}" target="_blank" class="download-link">ดาวน์โหลด</a></td>
+        `;
+        listEl.appendChild(row);
+    }
+
+    window.scanStorage = scanStorage;
+</script>
+
 </body>
 </html>
